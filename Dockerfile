@@ -19,7 +19,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY am5_monitor_server.py .
 COPY am5_system_monitor.html .
 COPY am5_system_monitor_kiosk.html .
-COPY TEMPERATURE_MAPPING.md .
+COPY docs/TEMPERATURE_MAPPING.md .
 
 # Create non-root user for security
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app

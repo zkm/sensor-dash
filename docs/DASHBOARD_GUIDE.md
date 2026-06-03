@@ -48,7 +48,7 @@ python3 /mnt/user-data/outputs/am5_monitor_server.py
 
 # Output should show:
 # ============================================================
-#   B650 SYSTEM MONITOR - Backend Server
+#   AM5 SYSTEM MONITOR - Backend Server
 # ============================================================
 # 
 # ✓ Server starting...
@@ -176,25 +176,25 @@ To keep the server running after you close the terminal:
 
 ```bash
 # Start in detached screen session
-screen -dmS b650_monitor python3 /mnt/user-data/outputs/am5_monitor_server.py
+screen -dmS am5_monitor python3 /mnt/user-data/outputs/am5_monitor_server.py
 
 # List running sessions
 screen -ls
 
 # Reconnect to session
-screen -r b650_monitor
+screen -r am5_monitor
 
 # Detach (leave running): Ctrl+A then D
-# Kill session: screen -X -S b650_monitor quit
+# Kill session: screen -X -S am5_monitor quit
 ```
 
 ### Option B: Using Systemd Service
 
-Create `/etc/systemd/system/b650-monitor.service`:
+Create `/etc/systemd/system/am5-monitor.service`:
 
 ```ini
 [Unit]
-Description=B650 System Monitor
+Description=AM5 System Monitor
 After=network.target
 
 [Service]
@@ -213,19 +213,19 @@ Then enable and start:
 
 ```bash
 # Copy service file
-sudo cp /etc/systemd/system/b650-monitor.service /etc/systemd/system/
+sudo cp /etc/systemd/system/am5-monitor.service /etc/systemd/system/
 
 # Enable on boot
-sudo systemctl enable b650-monitor.service
+sudo systemctl enable am5-monitor.service
 
 # Start now
-sudo systemctl start b650-monitor.service
+sudo systemctl start am5-monitor.service
 
 # Check status
-sudo systemctl status b650-monitor.service
+sudo systemctl status am5-monitor.service
 
 # View logs
-journalctl -u b650-monitor.service -f
+journalctl -u am5-monitor.service -f
 ```
 
 ---
@@ -329,11 +329,7 @@ The dashboard includes a **BIOS Configuration Guide** that walks you through:
 |------|---------|
 | `am5_system_monitor.html` | Web dashboard (open in browser) |
 | `am5_monitor_server.py` | Python backend (provides real data) |
-| `START_HERE.md` | Getting started guide |
 | `TEMPERATURE_MAPPING.md` | Sensor explanations |
-| `B650_AMD_System_Fan_Control.md` | Complete reference |
-| `b650_monitor.sh` | CLI monitoring script |
-| `b650_fan_setup.sh` | Setup/diagnostics tool |
 
 ---
 
@@ -478,7 +474,7 @@ sensors
 curl http://localhost:5000/api/health
 
 # View server logs (if using systemd)
-journalctl -u b650-monitor.service -n 20
+journalctl -u am5-monitor.service -n 20
 ```
 
 ### Common Issues & Fixes
@@ -503,12 +499,10 @@ journalctl -u b650-monitor.service -n 20
 
 ---
 
-**Enjoy your beautiful B650 system monitor! 🎉**
+**Enjoy your beautiful AM5 system monitor!**
 
 For more information, see:
-- `START_HERE.md` - Quick reference
 - `TEMPERATURE_MAPPING.md` - Sensor explanations
-- `B650_AMD_System_Fan_Control.md` - Complete technical guide
 
 ---
 
