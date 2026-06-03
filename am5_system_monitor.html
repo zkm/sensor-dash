@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AM5 System Monitor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #0f172a;
+            --secondary: #1e293b;
+            --accent: #00d9ff;
+            --accent-warm: #ff6b35;
+            --accent-cool: #00b4d8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --border: #334155;
+            --glass-light: rgba(30, 41, 59, 0.4);
+            --glass-dark: rgba(15, 23, 42, 0.6);
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1a1f35 50%, #2d1b4e 100%);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* Animated background grid */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 217, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 217, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Floating orbs */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 20%;
+            right: -100px;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(0, 180, 216, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: float 20s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) translateX(0px); }
+            50% { transform: translateY(-30px) translateX(-30px); }
+        }
+
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(0, 217, 255, 0.3), inset 0 0 20px rgba(0, 217, 255, 0.05);
+            }
+            50% {
+                box-shadow: 0 0 40px rgba(0, 217, 255, 0.5), inset 0 0 30px rgba(0, 217, 255, 0.1);
+            }
+        }
+
+        @keyframes scan-line {
+            0% { top: -100%; }
+            100% { top: 100%; }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            animation: slideInDown 0.8s ease-out;
+            margin-bottom: 50px;
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .logo-box {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-cool) 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: bold;
+            box-shadow: 0 0 30px rgba(0, 217, 255, 0.3);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-cool) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        .header-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.95em;
+            margin-top: 10px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .status-bar {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 30px;
+            padding: 20px;
+            background: var(--glass-light);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            background: var(--glass-dark);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            font-size: 0.9em;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        .status-dot.healthy {
+            background: var(--success);
+            box-shadow: 0 0 10px var(--success);
+        }
+
+        .status-dot.warning {
+            background: var(--warning);
+            box-shadow: 0 0 10px var(--warning);
+        }
+
+        .status-dot.critical {
+            background: var(--danger);
+            box-shadow: 0 0 10px var(--danger);
+        }
+
+        .controls-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+            animation: slideInUp 0.8s ease-out 0.2s both;
+        }
+
+        .control-card {
+            background: var(--glass-light);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .control-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 30px rgba(0, 217, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .control-card h3 {
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .control-card p {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            min-width: 120px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-cool) 100%);
+            color: var(--primary);
+            border: 2px solid var(--accent);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 0 20px rgba(0, 217, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--accent);
+            border: 2px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--glass-dark);
+            border-color: var(--accent);
+            box-shadow: 0 0 15px rgba(0, 217, 255, 0.2);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--accent-warm) 0%, #ff4444 100%);
+            color: white;
+            border: 2px solid var(--accent-warm);
+        }
+
+        .btn-danger:hover {
+            box-shadow: 0 0 20px rgba(255, 107, 53, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .monitors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .monitor-card {
+            background: var(--glass-light);
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            animation: slideInUp 0.8s ease-out both;
+        }
+
+        .monitor-card:nth-child(1) { animation-delay: 0.2s; }
+        .monitor-card:nth-child(2) { animation-delay: 0.3s; }
+        .monitor-card:nth-child(3) { animation-delay: 0.4s; }
+        .monitor-card:nth-child(4) { animation-delay: 0.5s; }
+        .monitor-card:nth-child(5) { animation-delay: 0.6s; }
+        .monitor-card:nth-child(6) { animation-delay: 0.7s; }
+
+        .monitor-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 30px rgba(0, 217, 255, 0.15);
+            transform: translateY(-4px);
+        }
+
+        .monitor-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 217, 255, 0.1), transparent);
+            animation: scan-line 3s ease-in-out infinite;
+        }
+
+        .monitor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .monitor-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .monitor-icon {
+            font-size: 1.8em;
+            opacity: 0.7;
+        }
+
+        .temp-display {
+            font-size: 2.5em;
+            font-weight: bold;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-cool) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .temp-label {
+            color: var(--text-secondary);
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .temp-bar {
+            width: 100%;
+            height: 10px;
+            background: var(--glass-dark);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            border: 1px solid var(--border);
+            position: relative;
+            z-index: 1;
+        }
+
+        .temp-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success), var(--warning), var(--danger));
+            border-radius: 5px;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px rgba(0, 217, 255, 0.3);
+        }
+
+        .temp-status {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8em;
+            color: var(--text-secondary);
+            margin-top: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .sensor-detail {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            margin-top: 10px;
+            padding: 10px;
+            background: var(--glass-dark);
+            border-radius: 6px;
+            border-left: 3px solid var(--accent);
+            position: relative;
+            z-index: 1;
+        }
+
+        .info-section {
+            background: var(--glass-light);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 40px;
+            backdrop-filter: blur(10px);
+            animation: slideInUp 0.8s ease-out 0.8s both;
+        }
+
+        .info-section h2 {
+            color: var(--accent);
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .info-item {
+            padding: 15px;
+            background: var(--glass-dark);
+            border-radius: 8px;
+            border-left: 3px solid var(--accent);
+        }
+
+        .info-label {
+            font-size: 0.8em;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .commands-section {
+            background: var(--glass-light);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            animation: slideInUp 0.8s ease-out 1s both;
+        }
+
+        .commands-section h2 {
+            color: var(--accent);
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .command-box {
+            background: var(--glass-dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.85em;
+            color: var(--accent);
+            overflow-x: auto;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .command-box:hover {
+            border-color: var(--accent);
+            background: var(--glass-light);
+        }
+
+        .command-box::before {
+            content: '$ ';
+            color: var(--accent-warm);
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 6px 12px;
+            font-size: 0.75em;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--glass-dark);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+            font-size: 0.9em;
+            border-top: 1px solid var(--border);
+            margin-top: 60px;
+        }
+
+        .footer a {
+            color: var(--accent);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Refresh indicator */
+        .refresh-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8em;
+            color: var(--text-secondary);
+            margin-top: 15px;
+        }
+
+        .refresh-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .monitors-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .temp-display {
+                font-size: 2em;
+            }
+
+            .control-card {
+                padding: 20px;
+            }
+
+            .container {
+                padding: 20px 15px;
+            }
+        }
+
+        /* Loading state */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="header-content">
+                <div class="logo-box">⚙️</div>
+                <div>
+                    <h1>AM5 SYSTEM MONITOR</h1>
+                    <p class="header-subtitle" id="header-subtitle">Detecting motherboard | Arch Linux</p>
+                </div>
+            </div>
+
+            <div class="status-bar">
+                <div class="status-item">
+                    <div class="status-dot healthy"></div>
+                    <span>System Online</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-dot healthy"></div>
+                    <span id="status-monitoring">Monitoring Active</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-dot" id="temp-status"></div>
+                    <span id="status-temp">All Temps Nominal</span>
+                </div>
+                <div class="status-item">
+                    <span id="last-update">Last update: Just now</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Quick Controls -->
+        <section class="controls-section">
+            <div class="control-card">
+                <h3>⚡ Enter BIOS Setup</h3>
+                <p>Configure fan curves and thermal settings in BIOS. This is the recommended way to control your motherboard fans.</p>
+                <div class="button-group">
+                    <button class="btn-primary" onclick="showBiosGuide()">View Guide</button>
+                </div>
+            </div>
+
+            <div class="control-card">
+                <h3>📊 Monitor Temps</h3>
+                <p>Real-time temperature monitoring. Watch your system heat up under load and verify fan curves work properly.</p>
+                <div class="button-group">
+                    <button class="btn-secondary" onclick="runStressTest()">Start Test</button>
+                    <button class="btn-secondary" onclick="startMonitoring()">Watch Live</button>
+                </div>
+            </div>
+
+            <div class="control-card">
+                <h3>🔧 System Information</h3>
+                <p>View detailed hardware specs, sensor mappings, and system configuration for your current motherboard.</p>
+                <div class="button-group">
+                    <button class="btn-secondary" onclick="showSystemInfo()">View Details</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Monitors -->
+        <section class="monitors-grid">
+            <!-- CPU Monitor -->
+            <div class="monitor-card">
+                <div class="monitor-header">
+                    <div>
+                        <div class="monitor-title">CPU Temperature</div>
+                        <div class="monitor-icon">🖥️</div>
+                    </div>
+                </div>
+                <div class="temp-display" id="cpu-temp">--°C</div>
+                <div class="temp-label">Current Temperature</div>
+                <div class="temp-bar">
+                    <div class="temp-bar-fill" id="cpu-bar" style="width: 35%"></div>
+                </div>
+                <div class="temp-status">
+                    <span>Safe: &lt;70°C</span>
+                    <span id="cpu-status">Idle</span>
+                </div>
+                <div class="sensor-detail" id="cpu-sensor-detail">📍 detecting sensor...</div>
+                <div class="refresh-indicator">
+                    <div class="refresh-dot"></div>
+                    <span>Live</span>
+                </div>
+            </div>
+
+            <!-- GPU Monitor -->
+            <div class="monitor-card">
+                <div class="monitor-header">
+                    <div>
+                        <div class="monitor-title">GPU Temperature</div>
+                        <div class="monitor-icon">🎮</div>
+                    </div>
+                </div>
+                <div class="temp-display" id="gpu-temp">38°C</div>
+                <div class="temp-label">GPU Edge Temperature</div>
+                <div class="temp-bar">
+                    <div class="temp-bar-fill" id="gpu-bar" style="width: 35%; background: linear-gradient(90deg, var(--success) 0%, var(--success) 100%)"></div>
+                </div>
+                <div class="temp-status">
+                    <span>Safe: &lt;85°C</span>
+                    <span id="gpu-status">Idle</span>
+                </div>
+                <div class="sensor-detail" id="gpu-sensor-detail">📍 detecting sensor...</div>
+                <div class="refresh-indicator">
+                    <div class="refresh-dot"></div>
+                    <span>Detected</span>
+                </div>
+            </div>
+
+            <!-- Chipset Monitor -->
+            <div class="monitor-card">
+                <div class="monitor-header">
+                    <div>
+                        <div class="monitor-title">Chipset</div>
+                        <div class="monitor-icon">🏢</div>
+                    </div>
+                </div>
+                <div class="temp-display" id="chipset-temp">45°C</div>
+                <div class="temp-label">Motherboard Temperature</div>
+                <div class="temp-bar">
+                    <div class="temp-bar-fill" id="chipset-bar" style="width: 40%; background: linear-gradient(90deg, var(--success) 0%, var(--success) 100%)"></div>
+                </div>
+                <div class="temp-status">
+                    <span>Safe: &lt;80°C</span>
+                    <span id="chipset-status">Nominal</span>
+                </div>
+                <div class="sensor-detail" id="chipset-sensor-detail">📍 detecting sensor...</div>
+                <div class="refresh-indicator">
+                    <div class="refresh-dot"></div>
+                    <span>Monitored</span>
+                </div>
+            </div>
+
+            <!-- SSD 1 Monitor -->
+            <div class="monitor-card">
+                <div class="monitor-header">
+                    <div>
+                        <div class="monitor-title">NVMe Drive 1</div>
+                        <div class="monitor-icon">💾</div>
+                    </div>
+                </div>
+                <div class="temp-display" id="nvme1-temp">40°C</div>
+                <div class="temp-label">SSD Temperature</div>
+                <div class="temp-bar">
+                    <div class="temp-bar-fill" id="nvme1-bar" style="width: 40%; background: linear-gradient(90deg, var(--success) 0%, var(--success) 100%)"></div>
+                </div>
+                <div class="temp-status">
+                    <span>Safe: &lt;60°C</span>
+                    <span id="nvme1-status">Healthy</span>
+                </div>
+                <div class="sensor-detail">📍 nvme-pci-0f00</div>
+                <div class="refresh-indicator">
+                    <div class="refresh-dot"></div>
+                    <span>Detected</span>
+                </div>
+            </div>
+
+            <!-- SSD 2 Monitor -->
+            <div class="monitor-card">
+                <div class="monitor-header">
+                    <div>
+                        <div class="monitor-title">NVMe Drive 2</div>
+                        <div class="monitor-icon">💾</div>
+                    </div>
+                </div>
+                <div class="temp-display" id="nvme2-temp">36°C</div>
+                <div class="temp-label">SSD Temperature</div>
+                <div class="temp-bar">
+                    <div class="temp-bar-fill" id="nvme2-bar" style="width: 36%; background: linear-gradient(90deg, var(--success) 0%, var(--success) 100%)"></div>
+                </div>
+                <div class="temp-status">
+                    <span>Safe: &lt;60°C</span>
+                    <span id="nvme2-status">Healthy</span>
+                </div>
+                <div class="sensor-detail">📍 nvme-pci-0400</div>
+                <div class="refresh-indicator">
+                    <div class="refresh-dot"></div>
+                    <span>Detected</span>
+                </div>
+            </div>
+
+            <!-- SSD 3 Monitor -->
+            <div class="monitor-card">
+                <div class="monitor-header">
+                    <div>
+                        <div class="monitor-title">NVMe Drive 3</div>
+                        <div class="monitor-icon">💾</div>
+                    </div>
+                </div>
+                <div class="temp-display" id="nvme3-temp">38°C</div>
+                <div class="temp-label">SSD Temperature</div>
+                <div class="temp-bar">
+                    <div class="temp-bar-fill" id="nvme3-bar" style="width: 38%; background: linear-gradient(90deg, var(--success) 0%, var(--success) 100%)"></div>
+                </div>
+                <div class="temp-status">
+                    <span>Safe: &lt;60°C</span>
+                    <span id="nvme3-status">Healthy</span>
+                </div>
+                <div class="sensor-detail">📍 nvme-pci-1200</div>
+                <div class="refresh-indicator">
+                    <div class="refresh-dot"></div>
+                    <span>Detected</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- System Information -->
+        <section class="info-section" id="info-section" style="display: none;">
+            <h2>📋 System Information</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Motherboard</div>
+                    <div class="info-value" id="info-motherboard">Detecting...</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Chipset</div>
+                    <div class="info-value" id="info-chipset">Detecting...</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">CPU Arch</div>
+                    <div class="info-value">AMD Ryzen (Zen 4)</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">GPUs Detected</div>
+                    <div class="info-value">2x AMD Radeon</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Storage Drives</div>
+                    <div class="info-value">3x NVMe</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Operating System</div>
+                    <div class="info-value">Arch Linux</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Fan Control</div>
+                    <div class="info-value">BIOS Only</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Temp Monitoring</div>
+                    <div class="info-value">Available ✓</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- BIOS Guide -->
+        <section class="info-section" id="bios-section" style="display: none;">
+            <h2>🔧 BIOS Fan Control Guide</h2>
+            <div style="line-height: 1.8; color: var(--text-secondary); margin-bottom: 25px;">
+                <h3 style="color: var(--accent); margin-top: 20px; margin-bottom: 10px;">Step 1: Enter BIOS</h3>
+                <p>Reboot your system and press <strong style="color: var(--text-primary);">DEL</strong> or <strong style="color: var(--text-primary);">F2</strong> immediately after power-on. You have only a few seconds.</p>
+
+                <h3 style="color: var(--accent); margin-top: 20px; margin-bottom: 10px;">Step 2: Navigate to Thermal Settings</h3>
+                <p>Go to: <strong style="color: var(--text-primary);">Power → Thermal Management (or Smart Fan Control)</strong></p>
+
+                <h3 style="color: var(--accent); margin-top: 20px; margin-bottom: 10px;">Step 3: Configure Fan Curves</h3>
+                <p>Use the <strong style="color: var(--text-primary);">Balanced Profile</strong> (recommended for most users):</p>
+                <div style="background: var(--glass-dark); padding: 15px; border-radius: 8px; margin-top: 10px; font-family: 'Courier New', monospace; font-size: 0.9em; color: var(--accent);">
+                    CPU Fan:<br/>
+                    30°C → 35% | 45°C → 45% | 60°C → 65% | 75°C → 90% | 80°C → 100%<br/><br/>
+                    SYS Fan:<br/>
+                    30°C → 30% | 45°C → 40% | 60°C → 60% | 75°C → 85% | 80°C → 100%
+                </div>
+
+                <h3 style="color: var(--accent); margin-top: 20px; margin-bottom: 10px;">Step 4: Save and Exit</h3>
+                <p>Press <strong style="color: var(--text-primary);">F10</strong>, confirm <strong style="color: var(--text-primary);">Yes</strong>, and let system reboot.</p>
+
+                <h3 style="color: var(--accent); margin-top: 20px; margin-bottom: 10px;">Why BIOS Control?</h3>
+                <p>✓ Safer than Linux tools<br/>✓ More reliable and stable<br/>✓ Firmware handles all thermal logic<br/>✓ No risk of misconfiguration<br/>✓ Works automatically</p>
+            </div>
+        </section>
+
+        <!-- Commands Reference -->
+        <section class="commands-section" id="commands-section" style="display: none;">
+            <h2>⌨️ Useful Commands</h2>
+            <div class="command-box" onclick="copyCommand(this)">sensors</div>
+            <div class="command-box" onclick="copyCommand(this)">watch -n1 sensors</div>
+            <div class="command-box" onclick="copyCommand(this)">sudo pacman -S stress-ng</div>
+            <div class="command-box" onclick="copyCommand(this)">stress-ng --cpu 0 --timeout 60s</div>
+            <div class="command-box" onclick="copyCommand(this)">cat /sys/class/thermal/thermal_zone0/temp | awk '{printf "%.1f°C\n", $1/1000}'</div>
+            <div class="command-box" onclick="copyCommand(this)">sensors amdgpu-pci-0300 | grep -E "fan1|edge|pwm1"</div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p id="footer-title">AM5 SYSTEM MONITOR | Auto-detected Board | Arch Linux</p>
+            <p style="margin-top: 15px; font-size: 0.85em;">
+                📖 View guides: 
+                <a href="#" onclick="showBiosGuide(); return false;">BIOS Setup</a> • 
+                <a href="#" onclick="showSystemInfo(); return false;">System Info</a> • 
+                <a href="#" onclick="showCommands(); return false;">Commands</a>
+            </p>
+            <p style="margin-top: 20px; font-size: 0.8em; color: var(--text-secondary);">
+                This dashboard is for monitoring and education. Use BIOS for actual fan control.
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        async function loadSystemInfo() {
+            try {
+                const res = await fetch('/api/info');
+                const info = await res.json();
+                const board = info.board_name || 'Auto-detected Board';
+                const chipset = info.chipset || 'AMD AM5';
+
+                document.getElementById('header-subtitle').textContent = `${board} | Arch Linux`;
+                document.getElementById('info-motherboard').textContent = board;
+                document.getElementById('info-chipset').textContent = chipset;
+                document.getElementById('footer-title').textContent = `AM5 SYSTEM MONITOR | ${board} | Arch Linux`;
+            } catch (err) {
+                document.getElementById('header-subtitle').textContent = 'AMD AM5 Motherboard | Arch Linux';
+                document.getElementById('info-motherboard').textContent = 'AMD AM5 Motherboard';
+                document.getElementById('info-chipset').textContent = 'AMD AM5';
+            }
+        }
+
+        async function updateTemperatures() {
+            try {
+                const [sensorsRes, tempsRes] = await Promise.all([
+                    fetch('/api/sensors'),
+                    fetch('/api/temps')
+                ]);
+
+                const sensors = await sensorsRes.json();
+                const tempsRaw = await tempsRes.json();
+
+                const nvmeTemps = Object.values(tempsRaw.storage || {}).filter(v => typeof v === 'number');
+
+                const temps = {
+                    cpu: sensors.cpu_temp,
+                    gpu: sensors.gpu_temp,
+                    chipset: sensors.chipset_temp,
+                    nvme1: nvmeTemps[0] ?? null,
+                    nvme2: nvmeTemps[1] ?? null,
+                    nvme3: nvmeTemps[2] ?? null,
+                };
+
+                updateTemp('cpu-temp', 'cpu-bar', 'cpu-status', temps.cpu, 70);
+                updateTemp('gpu-temp', 'gpu-bar', 'gpu-status', temps.gpu, 85);
+                updateTemp('chipset-temp', 'chipset-bar', 'chipset-status', temps.chipset, 80);
+                updateTemp('nvme1-temp', 'nvme1-bar', 'nvme1-status', temps.nvme1, 60);
+                updateTemp('nvme2-temp', 'nvme2-bar', 'nvme2-status', temps.nvme2, 60);
+                updateTemp('nvme3-temp', 'nvme3-bar', 'nvme3-status', temps.nvme3, 60);
+
+                if (sensors.cpu_sensor) {
+                    document.getElementById('cpu-sensor-detail').textContent = `📍 ${sensors.cpu_sensor}`;
+                }
+                if (sensors.gpu_sensor) {
+                    document.getElementById('gpu-sensor-detail').textContent = `📍 ${sensors.gpu_sensor}`;
+                }
+                if (sensors.chipset_sensor) {
+                    document.getElementById('chipset-sensor-detail').textContent = `📍 ${sensors.motherboard_chip || 'motherboard'} (${sensors.chipset_sensor})`;
+                }
+
+                const now = new Date();
+                document.getElementById('last-update').textContent = `Last update: ${now.toLocaleTimeString()}`;
+
+                const forStatus = Object.values(temps).filter(v => typeof v === 'number');
+                updateOverallStatus(forStatus);
+            } catch (err) {
+                document.getElementById('last-update').textContent = 'Last update: API error';
+            }
+        }
+
+        function updateTemp(displayId, barId, statusId, value, maxSafe) {
+            const display = document.getElementById(displayId);
+            const bar = document.getElementById(barId);
+            const status = document.getElementById(statusId);
+
+            if (typeof value !== 'number') {
+                display.textContent = '--°C';
+                bar.style.width = '0%';
+                status.textContent = 'Unknown';
+                status.style.color = 'var(--text-secondary)';
+                return;
+            }
+
+            display.textContent = (Math.round(value * 10) / 10).toFixed(1) + '°C';
+            bar.style.width = (value / maxSafe * 100) + '%';
+
+            if (value < maxSafe * 0.6) {
+                status.textContent = 'Idle';
+                status.style.color = 'var(--success)';
+            } else if (value < maxSafe * 0.85) {
+                status.textContent = 'Normal';
+                status.style.color = 'var(--warning)';
+            } else {
+                status.textContent = 'Hot';
+                status.style.color = 'var(--danger)';
+            }
+        }
+
+        function updateOverallStatus(temps) {
+            const statusDot = document.getElementById('temp-status');
+            const statusText = document.getElementById('status-temp');
+
+            if (!temps.length) {
+                statusDot.className = 'status-dot warning';
+                statusText.textContent = 'No Sensor Data';
+                return;
+            }
+
+            const maxTemp = Math.max(...temps);
+            if (maxTemp < 60) {
+                statusDot.className = 'status-dot healthy';
+                statusText.textContent = 'All Temps Nominal';
+            } else if (maxTemp < 75) {
+                statusDot.className = 'status-dot warning';
+                statusText.textContent = 'Temps Elevated';
+            } else {
+                statusDot.className = 'status-dot critical';
+                statusText.textContent = 'High Temperature!';
+            }
+        }
+
+        function showBiosGuide() {
+            document.getElementById('bios-section').style.display = 'block';
+            document.getElementById('info-section').style.display = 'none';
+            document.getElementById('commands-section').style.display = 'none';
+            document.querySelector('.commands-section').style.display = 'none';
+            document.querySelector('.info-section').style.display = 'block';
+            document.querySelector('.info-section').id = 'bios-section';
+            window.scrollTo({ top: document.getElementById('bios-section').offsetTop - 100, behavior: 'smooth' });
+        }
+
+        function showSystemInfo() {
+            document.getElementById('info-section').style.display = 'block';
+            document.getElementById('bios-section').style.display = 'none';
+            document.getElementById('commands-section').style.display = 'none';
+            window.scrollTo({ top: document.getElementById('info-section').offsetTop - 100, behavior: 'smooth' });
+        }
+
+        function showCommands() {
+            document.getElementById('commands-section').style.display = 'block';
+            document.getElementById('info-section').style.display = 'none';
+            document.getElementById('bios-section').style.display = 'none';
+            window.scrollTo({ top: document.getElementById('commands-section').offsetTop - 100, behavior: 'smooth' });
+        }
+
+        function startMonitoring() {
+            alert('Temperature monitoring is live! Watch the cards above update in real-time.\n\nFor actual real-time data from your system, run:\nsudo watch -n1 sensors');
+        }
+
+        function runStressTest() {
+            alert('To run a stress test on your actual system, open a terminal and run:\n\nsudo pacman -S stress-ng\nstress-ng --cpu 0 --timeout 60s\n\nThen use "Watch Live" above to monitor temperatures.');
+        }
+
+        function copyCommand(element) {
+            const text = element.textContent.replace('$ ', '');
+            navigator.clipboard.writeText(text).then(() => {
+                const original = element.textContent;
+                element.textContent = '✓ Copied!';
+                setTimeout(() => {
+                    element.textContent = original;
+                }, 2000);
+            });
+        }
+
+        // Start temperature updates
+        loadSystemInfo();
+        updateTemperatures();
+        setInterval(updateTemperatures, 2000);
+    </script>
+</body>
+</html>

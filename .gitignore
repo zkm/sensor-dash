@@ -1,0 +1,23 @@
+# Python virtual environments
+.venv/
+venv/
+env/
+
+# Python cache/artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Tool/cache directories
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local env/config
+.env
+.env.*
+
+# OS/editor noise
+.DS_Store
+*.swp

@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sensor Monitor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f35 100%);
+            color: #e0e0e0;
+            overflow: hidden;
+            min-height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 6px;
+            gap: 6px;
+        }
+
+        header {
+            text-align: center;
+            border-bottom: 2px solid #00d9ff;
+            padding-bottom: 4px;
+            flex-shrink: 0;
+        }
+
+        h1 {
+            font-size: 1.4em;
+            color: #00d9ff;
+            margin: 0;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .subtitle {
+            font-size: 0.65em;
+            color: #888;
+            margin: 2px 0 0 0;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            display: none;
+        }
+
+        .monitors {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 6px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .monitor-card {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(45, 27, 78, 0.9) 100%);
+            border: 2px solid rgba(0, 217, 255, 0.45);
+            padding: 8px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.4s ease, box-shadow 0.4s ease;
+        }
+
+        .monitor-card.warm {
+            border-color: rgba(245, 158, 11, 0.6);
+            box-shadow: 0 0 18px rgba(245, 158, 11, 0.15);
+        }
+
+        .monitor-card.hot {
+            border-color: rgba(239, 68, 68, 0.7);
+            box-shadow: 0 0 22px rgba(239, 68, 68, 0.25);
+        }
+
+        .monitor-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #00d9ff, transparent);
+            opacity: 0.5;
+        }
+
+        .monitor-card:hover {
+            border-color: #00d9ff;
+            box-shadow: 0 0 28px rgba(0, 217, 255, 0.35);
+        }
+
+        .monitor-title {
+            font-size: 1em;
+            color: rgba(0, 217, 255, 0.7);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+            letter-spacing: 1.5px;
+            font-weight: 700;
+        }
+
+        .monitor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex: 1;
+            gap: 4px;
+        }
+
+        .temp-display {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #00d9ff;
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+            transition: color 0.4s ease, text-shadow 0.4s ease;
+            text-shadow: 0 0 40px rgba(0, 217, 255, 0.35);
+        }
+
+        .temp-display.warm {
+            color: #f59e0b;
+            text-shadow: 0 0 40px rgba(245, 158, 11, 0.4);
+        }
+
+        .temp-display.hot {
+            color: #ef4444;
+            text-shadow: 0 0 40px rgba(239, 68, 68, 0.5);
+        }
+
+        .gauge-mini {
+            display: none;
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 0 8px rgba(0, 217, 255, 0.15));
+        }
+
+        .gauge-background {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.08);
+            stroke-width: 3;
+        }
+
+        .gauge-fill {
+            fill: none;
+            stroke: #00d9ff;
+            stroke-width: 3;
+            stroke-linecap: round;
+            transition: stroke 0.3s ease, stroke-dashoffset 0.4s ease;
+            transform-origin: 25px 25px;
+            transform: rotate(-90deg);
+        }
+
+        .gauge-fill.warm {
+            stroke: #f59e0b;
+        }
+
+        .gauge-fill.hot {
+            stroke: #ef4444;
+        }
+
+        .monitor-middle {
+            display: none;
+        }
+        .temp-bar {
+            width: 100%;
+            height: 14px;
+            background: rgba(255, 255, 255, 0.07);
+            border-radius: 5px;
+            margin: 6px 0 4px 0;
+            overflow: hidden;
+        }
+
+        .temp-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00d9ff, #00b4d8);
+            transition: width 0.6s ease, background 0.4s ease;
+            border-radius: 5px;
+            box-shadow: 0 0 8px rgba(0, 217, 255, 0.4);
+        }
+
+        .temp-bar-fill.warm {
+            background: linear-gradient(90deg, #fbbf24, #f59e0b);
+        }
+
+        .temp-bar-fill.hot {
+            background: linear-gradient(90deg, #ef4444, #dc2626);
+        }
+
+        .temp-status {
+            font-size: 0.85em;
+            color: #aaa;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            margin-right: 6px;
+            background: #10b981;
+            box-shadow: 0 0 6px #10b981;
+        }
+
+        .status-indicator.warm {
+            background: #f59e0b;
+            box-shadow: 0 0 6px #f59e0b;
+        }
+
+        .status-indicator.hot {
+            background: #ef4444;
+            box-shadow: 0 0 8px #ef4444;
+        }
+
+        /* Responsive for different screen sizes */
+        @media (max-height: 600px) {
+            .container {
+                padding: 8px;
+                gap: 8px;
+            }
+
+            h1 {
+                font-size: 1.3em;
+            }
+
+            .temp-display {
+                font-size: 4rem;
+            }
+
+            .monitor-card {
+                padding: 10px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .monitors {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-height: 480px) {
+            h1 {
+                font-size: 1.1em;
+                margin-bottom: 2px;
+            }
+
+            .subtitle {
+                display: none;
+            }
+
+            .monitor-card {
+                padding: 8px;
+            }
+
+            .temp-display {
+                font-size: 3rem;
+            }
+
+            .monitor-title {
+                font-size: 1em;
+            }
+
+            .monitor-middle {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚙️ <span id="hostname">MONITOR</span></h1>
+            <p class="subtitle">Real-time System Temps</p>
+        </header>
+
+        <div class="monitors">
+            <!-- CPU Temp -->
+            <div class="monitor-card">
+                <div class="monitor-title">🖥️ CPU</div>
+                    <div class="monitor-header">
+                        <div class="temp-display" id="cpu-temp">--°</div>
+                    </div>
+                    <div class="monitor-middle"></div>
+                <div class="temp-bar">
+                    <div class="temp-bar-fill" id="cpu-bar" style="width: 35%"></div>
+                </div>
+                <div class="temp-status"><span class="status-indicator" id="cpu-indicator"></span><span id="cpu-status">Idle</span></div>
+            </div>
+
+            <!-- GPU Temp -->
+            <div class="monitor-card">
+                <div class="monitor-title">🎮 GPU</div>
+                    <div class="monitor-header">
+                        <div class="temp-display" id="gpu-temp">--°</div>
+                    </div>
+                    <div class="monitor-middle"></div>
+                <div class="temp-bar">
+                    <div class="temp-bar-fill" id="gpu-bar" style="width: 20%"></div>
+                </div>
+                <div class="temp-status"><span class="status-indicator" id="gpu-indicator"></span><span id="gpu-status">Idle</span></div>
+            </div>
+
+            <!-- Chipset Temp -->
+            <div class="monitor-card">
+                <div class="monitor-title">⚙️ CHIPSET</div>
+                    <div class="monitor-header">
+                        <div class="temp-display" id="chipset-temp">--°</div>
+                    </div>
+                    <div class="monitor-middle"></div>
+                <div class="temp-bar">
+                    <div class="temp-bar-fill" id="chipset-bar" style="width: 40%"></div>
+                </div>
+                <div class="temp-status"><span class="status-indicator" id="chipset-indicator"></span><span id="chipset-status">Good</span></div>
+            </div>
+
+            <!-- VRM/Power Stage Temp -->
+            <div class="monitor-card">
+                <div class="monitor-title">⚡ VRM</div>
+                    <div class="monitor-header">
+                        <div class="temp-display" id="vrm-temp">--°</div>
+                    </div>
+                    <div class="monitor-middle"></div>
+                <div class="temp-bar">
+                    <div class="temp-bar-fill" id="vrm-bar" style="width: 40%"></div>
+                </div>
+                <div class="temp-status"><span class="status-indicator" id="vrm-indicator"></span><span id="vrm-status">Good</span></div>
+            </div>
+
+            <!-- NVMe Drives -->
+            <div class="monitor-card">
+                <div class="monitor-title">💾 NVMe 0</div>
+                    <div class="monitor-header">
+                        <div class="temp-display" id="nvme-0-temp">--°</div>
+                    </div>
+                    <div class="monitor-middle"></div>
+                <div class="temp-bar">
+                    <div class="temp-bar-fill" id="nvme-0-bar" style="width: 30%"></div>
+                </div>
+                <div class="temp-status"><span class="status-indicator" id="nvme-0-indicator"></span><span id="nvme-0-status">Cool</span></div>
+            </div>
+            <div class="monitor-card">
+                <div class="monitor-title">💾 NVMe 1</div>
+                    <div class="monitor-header">
+                        <div class="temp-display" id="nvme-1-temp">--°</div>
+                    </div>
+                    <div class="monitor-middle"></div>
+                <div class="temp-bar">
+                    <div class="temp-bar-fill" id="nvme-1-bar" style="width: 30%"></div>
+                </div>
+                <div class="temp-status"><span class="status-indicator" id="nvme-1-indicator"></span><span id="nvme-1-status">Cool</span></div>
+            </div>
+            <div class="monitor-card">
+                <div class="monitor-title">💾 NVMe 2</div>
+                    <div class="monitor-header">
+                        <div class="temp-display" id="nvme-2-temp">--°</div>
+                    </div>
+                    <div class="monitor-middle"></div>
+                <div class="temp-bar">
+                    <div class="temp-bar-fill" id="nvme-2-bar" style="width: 30%"></div>
+                </div>
+                <div class="temp-status"><span class="status-indicator" id="nvme-2-indicator"></span><span id="nvme-2-status">Cool</span></div>
+            </div>
+            <div class="monitor-card">
+                <div class="monitor-title">💾 NVMe 3</div>
+                    <div class="monitor-header">
+                        <div class="temp-display" id="nvme-3-temp">--°</div>
+                    </div>
+                    <div class="monitor-middle"></div>
+                <div class="temp-bar">
+                    <div class="temp-bar-fill" id="nvme-3-bar" style="width: 30%"></div>
+                </div>
+                <div class="temp-status"><span class="status-indicator" id="nvme-3-indicator"></span><span id="nvme-3-status">Cool</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api/sensors';
+        const INFO_URL = '/api/info';
+        let lastData = {};
+
+        // Fetch and display hostname
+        async function loadHostname() {
+            try {
+                const response = await fetch(INFO_URL);
+                const data = await response.json();
+                if (data.hostname) {
+                    document.getElementById('hostname').textContent = data.hostname.toUpperCase();
+                }
+            } catch (error) {
+                console.error('Failed to fetch hostname:', error);
+            }
+        }
+
+        function updateStatusIndicator(elementId, barId, gaugeId, statusId, temp, limits) {
+            const indicator = document.getElementById(elementId);
+            const statusText = document.getElementById(statusId);
+            const bar = document.getElementById(barId);
+            const gauge = document.getElementById(gaugeId);
+            
+            const card = indicator.closest('.monitor-card');
+            const tempDisplay = document.getElementById(elementId.replace('-indicator', '-temp'));
+            const themed = [indicator, bar, gauge, card, tempDisplay].filter(Boolean);
+            themed.forEach(el => el.classList.remove('warm', 'hot'));
+
+            if (temp >= limits.hot) {
+                themed.forEach(el => el.classList.add('hot'));
+                statusText.textContent = 'HOT';
+            } else if (temp >= limits.warm) {
+                themed.forEach(el => el.classList.add('warm'));
+                statusText.textContent = 'WARM';
+            } else {
+                statusText.textContent = limits.label;
+            }
+        }
+
+        async function updateTemps() {
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                lastData = data;
+
+                // CPU
+                if (data.cpu_temp !== null && data.cpu_temp !== undefined) {
+                    const cpuTemp = Math.round(data.cpu_temp * 10) / 10;
+                    document.getElementById('cpu-temp').textContent = cpuTemp.toFixed(1) + '°C';
+                    const cpuPercent = Math.min((cpuTemp / 100) * 100, 100);
+                    document.getElementById('cpu-bar').style.width = cpuPercent + '%';
+                    updateStatusIndicator('cpu-indicator', 'cpu-bar', 'cpu-gauge', 'cpu-status', cpuTemp, {
+                        hot: 85,
+                        warm: 70,
+                        label: 'Safe'
+                    });
+                }
+
+                // GPU
+                if (data.gpu_temp !== null && data.gpu_temp !== undefined) {
+                    const gpuTemp = Math.round(data.gpu_temp * 10) / 10;
+                    document.getElementById('gpu-temp').textContent = gpuTemp.toFixed(1) + '°C';
+                    const gpuPercent = Math.min((gpuTemp / 100) * 100, 100);
+                    document.getElementById('gpu-bar').style.width = gpuPercent + '%';
+                    updateStatusIndicator('gpu-indicator', 'gpu-bar', 'gpu-gauge', 'gpu-status', gpuTemp, {
+                        hot: 90,
+                        warm: 75,
+                        label: 'Safe'
+                    });
+                }
+
+                // Chipset
+                if (data.chipset_temp !== null && data.chipset_temp !== undefined) {
+                    const chipsetTemp = Math.round(data.chipset_temp * 10) / 10;
+                    document.getElementById('chipset-temp').textContent = chipsetTemp.toFixed(1) + '°C';
+                    const chipsetPercent = Math.min((chipsetTemp / 100) * 100, 100);
+                    document.getElementById('chipset-bar').style.width = chipsetPercent + '%';
+                    updateStatusIndicator('chipset-indicator', 'chipset-bar', 'chipset-gauge', 'chipset-status', chipsetTemp, {
+                        hot: 80,
+                        warm: 65,
+                        label: 'Good'
+                    });
+                }
+
+                // VRM/Power Stage
+                if (data.vrm_temp !== null && data.vrm_temp !== undefined) {
+                    const vrmTemp = Math.round(data.vrm_temp * 10) / 10;
+                    document.getElementById('vrm-temp').textContent = vrmTemp.toFixed(1) + '°C';
+                    const vrmPercent = Math.min((vrmTemp / 100) * 100, 100);
+                    document.getElementById('vrm-bar').style.width = vrmPercent + '%';
+                    updateStatusIndicator('vrm-indicator', 'vrm-bar', 'vrm-gauge', 'vrm-status', vrmTemp, {
+                        hot: 80,
+                        warm: 65,
+                        label: 'Good'
+                    });
+                }
+
+                // NVMe (all 4 drives, 0-indexed)
+                if (data.nvme_temps && typeof data.nvme_temps === 'object') {
+                    const nvmeIds = Object.keys(data.nvme_temps).sort();
+                    nvmeIds.forEach((driveId, index) => {
+                        const driveNum = index;
+                        const nvmeTemp = Math.round(data.nvme_temps[driveId] * 10) / 10;
+                        const tempDisplay = document.getElementById(`nvme-${driveNum}-temp`);
+                        if (tempDisplay) {
+                            tempDisplay.textContent = nvmeTemp.toFixed(1) + '°C';
+                        }
+                        const percent = Math.min((nvmeTemp / 70) * 100, 100);
+                        const bar = document.getElementById(`nvme-${driveNum}-bar`);
+                        if (bar) bar.style.width = percent + '%';
+                        updateStatusIndicator(`nvme-${driveNum}-indicator`, `nvme-${driveNum}-bar`, `nvme-${driveNum}-gauge`, `nvme-${driveNum}-status`, nvmeTemp, {
+                            hot: 60,
+                            warm: 50,
+                            label: 'Cool'
+                        });
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to fetch temps:', error);
+            }
+        }
+
+        // Update every 2 seconds
+        loadHostname();
+        updateTemps();
+        setInterval(updateTemps, 2000);
+    </script>
+</body>
+</html>
