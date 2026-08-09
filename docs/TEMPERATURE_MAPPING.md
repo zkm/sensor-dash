@@ -1,6 +1,8 @@
-# ASUS X870E + AMD System - Temperature Mapping Reference
+# Example: AM5 Desktop Temperature Mapping Reference
 
-## Your Hardware Detected
+This is a worked example from one AM5 desktop build, kept as a reference for what sensor output looks like on that kind of hardware. Sensor Dash auto-detects whatever is actually present on your machine and hides cards for anything not found — your own sensor labels and available cards will differ if you're not on similar AM5/ASUS hardware.
+
+## Example Hardware
 
 ```
 Motherboard:    ASUS ROG Strix X870E-E Gaming WiFi

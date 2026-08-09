@@ -16,9 +16,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application files
-COPY am5_monitor_server.py .
-COPY am5_system_monitor.html .
-COPY am5_system_monitor_kiosk.html .
+COPY sensor_dash_server.py .
+COPY sensor_dash.html .
+COPY sensor_dash_kiosk.html .
 COPY docs/TEMPERATURE_MAPPING.md .
 
 # Create non-root user for security
@@ -33,4 +33,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:5000/api/sensors || exit 1
 
 # Run the application
-CMD ["python3", "am5_monitor_server.py"]
+CMD ["python3", "sensor_dash_server.py"]

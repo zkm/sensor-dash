@@ -1,6 +1,6 @@
-# AM5 Monitor - Docker Deployment Guide
+# Sensor Dash - Docker Deployment Guide
 
-Deploy the AM5 system monitor to a Raspberry Pi with Docker.
+Deploy Sensor Dash to a Raspberry Pi with Docker.
 
 ## Dashboard Options
 
@@ -46,33 +46,33 @@ sudo apt-get install docker-compose
 Option A - Via Git:
 ```bash
 cd ~
-git clone <your-repo-url> am5-monitor
-cd am5-monitor
+git clone <your-repo-url> sensor-dash
+cd sensor-dash
 ```
 
 Option B - Via SCP:
 ```bash
-scp -r /path/to/b650_fans pi@<pi-ip>:~/am5-monitor
+scp -r /path/to/b650_fans pi@<pi-ip>:~/sensor-dash
 ```
 
 ### 3. Build and Run Docker Container
 
 ```bash
-cd ~/am5-monitor
+cd ~/sensor-dash
 
 # Using Docker Compose (recommended)
 docker-compose up -d
 
 # OR manually with Docker
-docker build -t am5-monitor:latest .
+docker build -t sensor-dash:latest .
 docker run -d \
-  --name am5-monitor \
+  --name sensor-dash \
   --restart unless-stopped \
   -p 5000:5000 \
   -v /sys:/sys:ro \
   -v /proc:/proc:ro \
   --cap-add SYS_ADMIN \
-  am5-monitor:latest
+  sensor-dash:latest
 ```
 
 ### 3A. Desktop Source Mode (run on desktop)
@@ -128,11 +128,11 @@ If you use Pi Proxy Mode, keep this URL as `localhost` on Pi. The Pi container w
 
 ### Option 2: Using systemd Service
 
-Create `/etc/systemd/system/am5-kiosk.service`:
+Create `/etc/systemd/system/sensor-dash-kiosk.service`:
 
 ```ini
 [Unit]
-Description=AM5 Monitor Fullscreen Display
+Description=Sensor Dash Fullscreen Display
 After=graphical.target
 Requires=graphical.target
 
@@ -150,8 +150,8 @@ WantedBy=graphical.target
 
 Enable the service:
 ```bash
-sudo systemctl enable am5-kiosk.service
-sudo systemctl start am5-kiosk.service
+sudo systemctl enable sensor-dash-kiosk.service
+sudo systemctl start sensor-dash-kiosk.service
 ```
 
 ### Option 3: Firefox Fullscreen
@@ -170,17 +170,17 @@ firefox --kiosk http://localhost:5000/kiosk
 
 ```bash
 # View logs
-docker logs -f am5-monitor
+docker logs -f sensor-dash
 
 # Stop container
 docker-compose down
 # or
-docker stop am5-monitor
+docker stop sensor-dash
 
 # Restart container
 docker-compose restart
 # or
-docker restart am5-monitor
+docker restart sensor-dash
 
 # View container status
 docker ps
@@ -191,10 +191,10 @@ docker ps
 ### Container Won't Start
 ```bash
 # Check logs
-docker logs am5-monitor
+docker logs sensor-dash
 
 # Verify sensors are accessible
-docker exec am5-monitor sensors
+docker exec sensor-dash sensors
 ```
 
 ### Sensors Not Reading Data
@@ -210,7 +210,7 @@ docker exec am5-monitor sensors
 ### Dashboard Won't Load
 - Check firewall: `sudo ufw allow 5000`
 - Verify container is running: `docker ps`
-- Check logs: `docker logs am5-monitor`
+- Check logs: `docker logs sensor-dash`
 
 ### Port Already in Use
 ```bash
@@ -241,7 +241,7 @@ For older Raspberry Pi models, consider:
 ## Updating the Container
 
 ```bash
-cd ~/am5-monitor
+cd ~/sensor-dash
 
 # Pull latest code
 git pull

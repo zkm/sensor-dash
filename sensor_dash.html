@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AM5 System Monitor</title>
+    <title>Sensor Dash</title>
     <style>
         * {
             margin: 0;
@@ -636,8 +636,8 @@
             <div class="header-content">
                 <div class="logo-box">⚙️</div>
                 <div>
-                    <h1>AM5 SYSTEM MONITOR</h1>
-                    <p class="header-subtitle" id="header-subtitle">Detecting motherboard | Arch Linux</p>
+                    <h1>SENSOR DASH</h1>
+                    <p class="header-subtitle" id="header-subtitle">Detecting motherboard | Detecting OS</p>
                 </div>
             </div>
 
@@ -691,7 +691,7 @@
         <!-- Main Monitors -->
         <section class="monitors-grid">
             <!-- CPU Monitor -->
-            <div class="monitor-card">
+            <div class="monitor-card" id="cpu-card">
                 <div class="monitor-header">
                     <div>
                         <div class="monitor-title">CPU Temperature</div>
@@ -715,7 +715,7 @@
             </div>
 
             <!-- GPU Monitor -->
-            <div class="monitor-card">
+            <div class="monitor-card" id="gpu-card">
                 <div class="monitor-header">
                     <div>
                         <div class="monitor-title">GPU Temperature</div>
@@ -739,7 +739,7 @@
             </div>
 
             <!-- Chipset Monitor -->
-            <div class="monitor-card">
+            <div class="monitor-card" id="chipset-card">
                 <div class="monitor-header">
                     <div>
                         <div class="monitor-title">Chipset</div>
@@ -763,7 +763,7 @@
             </div>
 
             <!-- SSD 1 Monitor -->
-            <div class="monitor-card">
+            <div class="monitor-card" id="nvme1-card">
                 <div class="monitor-header">
                     <div>
                         <div class="monitor-title">NVMe Drive 1</div>
@@ -779,7 +779,7 @@
                     <span>Safe: &lt;60°C</span>
                     <span id="nvme1-status">Healthy</span>
                 </div>
-                <div class="sensor-detail">📍 nvme-pci-0f00</div>
+                <div class="sensor-detail" id="nvme1-sensor-detail">📍 detecting sensor...</div>
                 <div class="refresh-indicator">
                     <div class="refresh-dot"></div>
                     <span>Detected</span>
@@ -787,7 +787,7 @@
             </div>
 
             <!-- SSD 2 Monitor -->
-            <div class="monitor-card">
+            <div class="monitor-card" id="nvme2-card">
                 <div class="monitor-header">
                     <div>
                         <div class="monitor-title">NVMe Drive 2</div>
@@ -803,7 +803,7 @@
                     <span>Safe: &lt;60°C</span>
                     <span id="nvme2-status">Healthy</span>
                 </div>
-                <div class="sensor-detail">📍 nvme-pci-0400</div>
+                <div class="sensor-detail" id="nvme2-sensor-detail">📍 detecting sensor...</div>
                 <div class="refresh-indicator">
                     <div class="refresh-dot"></div>
                     <span>Detected</span>
@@ -811,7 +811,7 @@
             </div>
 
             <!-- SSD 3 Monitor -->
-            <div class="monitor-card">
+            <div class="monitor-card" id="nvme3-card">
                 <div class="monitor-header">
                     <div>
                         <div class="monitor-title">NVMe Drive 3</div>
@@ -827,7 +827,7 @@
                     <span>Safe: &lt;60°C</span>
                     <span id="nvme3-status">Healthy</span>
                 </div>
-                <div class="sensor-detail">📍 nvme-pci-1200</div>
+                <div class="sensor-detail" id="nvme3-sensor-detail">📍 detecting sensor...</div>
                 <div class="refresh-indicator">
                     <div class="refresh-dot"></div>
                     <span>Detected</span>
@@ -861,7 +861,7 @@
                 </div>
                 <div class="info-item">
                     <div class="info-label">Operating System</div>
-                    <div class="info-value">Arch Linux</div>
+                    <div class="info-value" id="info-os">Detecting...</div>
                 </div>
                 <div class="info-item">
                     <div class="info-label">Fan Control</div>
@@ -914,7 +914,7 @@
 
         <!-- Footer -->
         <footer class="footer">
-            <p id="footer-title">AM5 SYSTEM MONITOR | Auto-detected Board | Arch Linux</p>
+            <p id="footer-title">SENSOR DASH | Auto-detected Board | Detecting OS</p>
             <p style="margin-top: 15px; font-size: 0.85em;">
                 📖 View guides: 
                 <a href="#" onclick="showBiosGuide(); return false;">BIOS Setup</a> • 
@@ -934,37 +934,35 @@
                 const info = await res.json();
                 const board = info.board_name || 'Auto-detected Board';
                 const chipset = info.chipset || 'AMD AM5';
+                const os = info.os_name || 'Linux';
 
-                document.getElementById('header-subtitle').textContent = `${board} | Arch Linux`;
+                document.getElementById('header-subtitle').textContent = `${board} | ${os}`;
                 document.getElementById('info-motherboard').textContent = board;
                 document.getElementById('info-chipset').textContent = chipset;
-                document.getElementById('footer-title').textContent = `AM5 SYSTEM MONITOR | ${board} | Arch Linux`;
+                document.getElementById('info-os').textContent = os;
+                document.getElementById('footer-title').textContent = `SENSOR DASH | ${board} | ${os}`;
             } catch (err) {
-                document.getElementById('header-subtitle').textContent = 'AMD AM5 Motherboard | Arch Linux';
-                document.getElementById('info-motherboard').textContent = 'AMD AM5 Motherboard';
-                document.getElementById('info-chipset').textContent = 'AMD AM5';
+                document.getElementById('header-subtitle').textContent = 'Auto-detected Board | Linux';
+                document.getElementById('info-motherboard').textContent = 'Auto-detected Board';
+                document.getElementById('info-chipset').textContent = 'Unknown';
+                document.getElementById('info-os').textContent = 'Unknown';
             }
         }
 
         async function updateTemperatures() {
             try {
-                const [sensorsRes, tempsRes] = await Promise.all([
-                    fetch('/api/sensors'),
-                    fetch('/api/temps')
-                ]);
-
+                const sensorsRes = await fetch('/api/sensors');
                 const sensors = await sensorsRes.json();
-                const tempsRaw = await tempsRes.json();
 
-                const nvmeTemps = Object.values(tempsRaw.storage || {}).filter(v => typeof v === 'number');
+                const nvmeEntries = Object.entries(sensors.nvme_temps || {}).sort((a, b) => a[0].localeCompare(b[0]));
 
                 const temps = {
                     cpu: sensors.cpu_temp,
                     gpu: sensors.gpu_temp,
                     chipset: sensors.chipset_temp,
-                    nvme1: nvmeTemps[0] ?? null,
-                    nvme2: nvmeTemps[1] ?? null,
-                    nvme3: nvmeTemps[2] ?? null,
+                    nvme1: nvmeEntries[0]?.[1] ?? null,
+                    nvme2: nvmeEntries[1]?.[1] ?? null,
+                    nvme3: nvmeEntries[2]?.[1] ?? null,
                 };
 
                 updateTemp('cpu-temp', 'cpu-bar', 'cpu-status', temps.cpu, 70);
@@ -973,6 +971,13 @@
                 updateTemp('nvme1-temp', 'nvme1-bar', 'nvme1-status', temps.nvme1, 60);
                 updateTemp('nvme2-temp', 'nvme2-bar', 'nvme2-status', temps.nvme2, 60);
                 updateTemp('nvme3-temp', 'nvme3-bar', 'nvme3-status', temps.nvme3, 60);
+
+                toggleCard('cpu-card', temps.cpu);
+                toggleCard('gpu-card', temps.gpu);
+                toggleCard('chipset-card', temps.chipset);
+                toggleCard('nvme1-card', temps.nvme1);
+                toggleCard('nvme2-card', temps.nvme2);
+                toggleCard('nvme3-card', temps.nvme3);
 
                 if (sensors.cpu_sensor) {
                     document.getElementById('cpu-sensor-detail').textContent = `📍 ${sensors.cpu_sensor}`;
@@ -983,6 +988,10 @@
                 if (sensors.chipset_sensor) {
                     document.getElementById('chipset-sensor-detail').textContent = `📍 ${sensors.motherboard_chip || 'motherboard'} (${sensors.chipset_sensor})`;
                 }
+                [nvmeEntries[0], nvmeEntries[1], nvmeEntries[2]].forEach((entry, i) => {
+                    const el = document.getElementById(`nvme${i + 1}-sensor-detail`);
+                    if (el && entry) el.textContent = `📍 ${entry[0]}`;
+                });
 
                 const now = new Date();
                 document.getElementById('last-update').textContent = `Last update: ${now.toLocaleTimeString()}`;
@@ -1020,6 +1029,11 @@
                 status.textContent = 'Hot';
                 status.style.color = 'var(--danger)';
             }
+        }
+
+        function toggleCard(cardId, value) {
+            const card = document.getElementById(cardId);
+            if (card) card.style.display = (typeof value === 'number') ? '' : 'none';
         }
 
         function updateOverallStatus(temps) {

@@ -1,6 +1,6 @@
-# AM5 System Monitor - Web Dashboard
+# Sensor Dash - Web Dashboard
 
-Beautiful, real-time system monitoring interface for your ASUS ROG Strix X870E-E Gaming WiFi motherboard.
+Beautiful, real-time system monitoring interface for your Linux machine. Sensor cards (CPU, GPU, chipset, VRM, NVMe) only appear when the underlying sensor is actually detected on your hardware.
 
 ---
 
@@ -10,7 +10,7 @@ Beautiful, real-time system monitoring interface for your ASUS ROG Strix X870E-E
 
 ```bash
 # Simply open the HTML file in your browser
-firefox /mnt/user-data/outputs/am5_system_monitor.html
+firefox ./sensor_dash.html
 
 # Or use a file manager and double-click it
 ```
@@ -41,14 +41,14 @@ pip install --break-system-packages flask flask-cors
 
 ```bash
 # Make script executable
-chmod +x /mnt/user-data/outputs/am5_monitor_server.py
+chmod +x ./sensor_dash_server.py
 
 # Run the server
-python3 /mnt/user-data/outputs/am5_monitor_server.py
+python3 ./sensor_dash_server.py
 
 # Output should show:
 # ============================================================
-#   AM5 SYSTEM MONITOR - Backend Server
+#   SENSOR DASH - Backend Server
 # ============================================================
 # 
 # ✓ Server starting...
@@ -176,32 +176,32 @@ To keep the server running after you close the terminal:
 
 ```bash
 # Start in detached screen session
-screen -dmS am5_monitor python3 /mnt/user-data/outputs/am5_monitor_server.py
+screen -dmS sensor_dash python3 ./sensor_dash_server.py
 
 # List running sessions
 screen -ls
 
 # Reconnect to session
-screen -r am5_monitor
+screen -r sensor_dash
 
 # Detach (leave running): Ctrl+A then D
-# Kill session: screen -X -S am5_monitor quit
+# Kill session: screen -X -S sensor_dash quit
 ```
 
 ### Option B: Using Systemd Service
 
-Create `/etc/systemd/system/am5-monitor.service`:
+Create `/etc/systemd/system/sensor-dash.service`:
 
 ```ini
 [Unit]
-Description=AM5 System Monitor
+Description=Sensor Dash
 After=network.target
 
 [Service]
 Type=simple
 User=root
-WorkingDirectory=/mnt/user-data/outputs
-ExecStart=/usr/bin/python3 /mnt/user-data/outputs/am5_monitor_server.py
+WorkingDirectory=/opt/sensor-dash
+ExecStart=/usr/bin/python3 sensor_dash_server.py
 Restart=always
 RestartSec=5
 
@@ -213,19 +213,19 @@ Then enable and start:
 
 ```bash
 # Copy service file
-sudo cp /etc/systemd/system/am5-monitor.service /etc/systemd/system/
+sudo cp /etc/systemd/system/sensor-dash.service /etc/systemd/system/
 
 # Enable on boot
-sudo systemctl enable am5-monitor.service
+sudo systemctl enable sensor-dash.service
 
 # Start now
-sudo systemctl start am5-monitor.service
+sudo systemctl start sensor-dash.service
 
 # Check status
-sudo systemctl status am5-monitor.service
+sudo systemctl status sensor-dash.service
 
 # View logs
-journalctl -u am5-monitor.service -f
+journalctl -u sensor-dash.service -f
 ```
 
 ---
@@ -237,10 +237,10 @@ journalctl -u am5-monitor.service -f
 **Problem:** Dashboard shows mock data instead of real temperatures
 
 **Solution:**
-1. Ensure sensors are installed: `sudo pacman -S lm_sensors`
+1. Ensure sensors are installed: `sudo pacman -S lm_sensors` (Arch), `sudo dnf install lm_sensors` (Fedora), or `sudo apt install lm-sensors` (Debian/Ubuntu)
 2. Run sensor detection: `sudo sensors-detect`
 3. Check if sensors work: `sensors`
-4. Ensure server has permission to read sensors: `sudo python3 am5_monitor_server.py`
+4. Ensure server has permission to read sensors: `sudo python3 sensor_dash_server.py`
 
 ### Can't Connect to Server
 
@@ -259,7 +259,7 @@ journalctl -u am5-monitor.service -f
 **Solution:**
 1. Verify sensors are detected: `sensors`
 2. Check permissions: `ls -la /sys/class/thermal/`
-3. Run server with sudo: `sudo python3 am5_monitor_server.py`
+3. Run server with sudo: `sudo python3 sensor_dash_server.py`
 
 ### Server Won't Start (Import Error)
 
@@ -276,7 +276,7 @@ pip install --break-system-packages flask flask-cors
 
 ### Change Server Port
 
-Edit `am5_monitor_server.py`, find the last line:
+Edit `sensor_dash_server.py`, find the last line:
 
 ```python
 app.run(host='0.0.0.0', port=5000, debug=False)
@@ -289,7 +289,7 @@ app.run(host='0.0.0.0', port=8080, debug=False)
 
 ### Change Refresh Rate
 
-Edit `am5_system_monitor.html`, find:
+Edit `sensor_dash.html`, find:
 
 ```javascript
 setInterval(updateTemperatures, 2000);
@@ -299,7 +299,7 @@ Change `2000` to milliseconds you want (e.g., `5000` = 5 seconds).
 
 ### Modify Temperature Thresholds
 
-In the Python server (`am5_monitor_server.py`), update the `safe_max` values in `TempAnalyzer.analyze_all()`:
+In the Python server (`sensor_dash_server.py`), update the `safe_max` values in `TempAnalyzer.analyze_all()`:
 
 ```python
 # Change these values:
@@ -327,8 +327,8 @@ The dashboard includes a **BIOS Configuration Guide** that walks you through:
 
 | File | Purpose |
 |------|---------|
-| `am5_system_monitor.html` | Web dashboard (open in browser) |
-| `am5_monitor_server.py` | Python backend (provides real data) |
+| `sensor_dash.html` | Web dashboard (open in browser) |
+| `sensor_dash_server.py` | Python backend (provides real data) |
 | `TEMPERATURE_MAPPING.md` | Sensor explanations |
 
 ---
@@ -338,14 +338,14 @@ The dashboard includes a **BIOS Configuration Guide** that walks you through:
 ### Example 1: Simple Temperature Check (No Server)
 ```bash
 # View dashboard in browser
-firefox /mnt/user-data/outputs/am5_system_monitor.html
+firefox ./sensor_dash.html
 # Shows mock data (demo mode)
 ```
 
 ### Example 2: Real-Time Monitoring (With Server)
 ```bash
 # Terminal 1: Start server
-sudo python3 /mnt/user-data/outputs/am5_monitor_server.py
+sudo python3 ./sensor_dash_server.py
 
 # Terminal 2: Open dashboard (or in browser)
 # http://localhost:5000/dashboard
@@ -357,13 +357,12 @@ sudo python3 /mnt/user-data/outputs/am5_monitor_server.py
 ### Example 3: Monitor While Stress Testing
 ```bash
 # Terminal 1: Start server
-sudo python3 /mnt/user-data/outputs/am5_monitor_server.py
+sudo python3 ./sensor_dash_server.py
 
 # Terminal 2: Open dashboard
 firefox http://localhost:5000/dashboard
 
-# Terminal 3: Run stress test
-sudo pacman -S stress-ng
+# Terminal 3: Run stress test (install via your distro's package manager, e.g. pacman/dnf/apt)
 stress-ng --cpu 0 --timeout 60s
 
 # Watch temps climb on dashboard while CPU is loaded
@@ -374,7 +373,7 @@ stress-ng --cpu 0 --timeout 60s
 ## Performance & Compatibility
 
 ### System Requirements
-- Arch Linux with lm_sensors installed
+- Linux with lm_sensors installed
 - Python 3.6+
 - Modern web browser (Chrome, Firefox, Safari, Edge)
 - ~5MB disk space
@@ -400,7 +399,7 @@ stress-ng --cpu 0 --timeout 60s
 ### 1. Run Server with Elevated Privileges
 Some sensors require root access:
 ```bash
-sudo python3 /mnt/user-data/outputs/am5_monitor_server.py
+sudo python3 ./sensor_dash_server.py
 ```
 
 ### 2. Use in Full-Screen for Gaming
@@ -410,11 +409,11 @@ Press `F11` in browser to maximize dashboard during gaming sessions.
 Run server on each machine with different ports:
 ```bash
 # Machine 1: port 5000
-python3 am5_monitor_server.py
+python3 sensor_dash_server.py
 
 # Machine 2: port 5001
 # Edit server script: port=5001
-python3 am5_monitor_server.py
+python3 sensor_dash_server.py
 
 # Access both:
 # http://machine1:5000
@@ -474,14 +473,14 @@ sensors
 curl http://localhost:5000/api/health
 
 # View server logs (if using systemd)
-journalctl -u am5-monitor.service -n 20
+journalctl -u sensor-dash.service -n 20
 ```
 
 ### Common Issues & Fixes
 
 | Issue | Cause | Fix |
 |-------|-------|-----|
-| No temperature data | Server not running | Run `python3 am5_monitor_server.py` |
+| No temperature data | Server not running | Run `python3 sensor_dash_server.py` |
 | "Connection refused" | Wrong port or server crashed | Check `ps aux \| grep python3` |
 | Partial sensor data | Missing sensor detection | Run `sudo sensors-detect --auto` |
 | Permission denied | Wrong user | Run server with `sudo` |
@@ -499,7 +498,7 @@ journalctl -u am5-monitor.service -n 20
 
 ---
 
-**Enjoy your beautiful AM5 system monitor!**
+**Enjoy your beautiful sensor dashboard!**
 
 For more information, see:
 - `TEMPERATURE_MAPPING.md` - Sensor explanations
@@ -507,4 +506,4 @@ For more information, see:
 ---
 
 **Last Updated**: March 2025  
-**For**: Gigabyte B650 EAGLE AX | Arch Linux | AMD Systems
+**For**: Any Linux system with lm_sensors support

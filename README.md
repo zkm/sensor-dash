@@ -1,6 +1,6 @@
-# AM5 System Monitor
+# Sensor Dash
 
-Web dashboard and API for monitoring AMD AM5 desktop temperatures.
+Web dashboard and API for monitoring Linux system temperatures. Auto-detects available sensors (CPU, GPU, chipset, VRM, NVMe) and only displays what's actually present on the host; includes extra chipset/board detection for AMD AM5 desktops.
 
 This project provides:
 - A Flask backend API for live sensor data
@@ -10,9 +10,9 @@ This project provides:
 
 ## Project Files
 
-- [am5_monitor_server.py](am5_monitor_server.py): Flask server and sensor API
-- [am5_system_monitor.html](am5_system_monitor.html): Full dashboard UI
-- [am5_system_monitor_kiosk.html](am5_system_monitor_kiosk.html): Kiosk UI
+- [sensor_dash_server.py](sensor_dash_server.py): Flask server and sensor API
+- [sensor_dash.html](sensor_dash.html): Full dashboard UI
+- [sensor_dash_kiosk.html](sensor_dash_kiosk.html): Kiosk UI
 - [docker-compose.yml](docker-compose.yml): Container orchestration
 - [Dockerfile](Dockerfile): Container build image
 
@@ -27,7 +27,7 @@ Guides:
    pip install -r requirements.txt
 
 2. Run server:
-   python3 am5_monitor_server.py
+   python3 sensor_dash_server.py
 
 3. Open:
    http://localhost:5000/dashboard

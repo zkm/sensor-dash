@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-X870E System Monitor - Backend Server
+Sensor Dash - Backend Server
 Provides real sensor data via REST API to the web dashboard
 
 Installation:
     pip install --break-system-packages flask psutil
 
 Usage:
-    python3 am5_monitor_server.py
+    python3 sensor_dash_server.py
     Then open: http://localhost:5000/dashboard
 """
 
@@ -92,6 +92,15 @@ def detect_chipset_from_board(board_name: str) -> str:
     if 'X670' in name:
         return 'AMD X670'
     return 'AMD AM5 (detected)'
+
+
+def get_os_name() -> str:
+    """Return a human-readable OS name from /etc/os-release."""
+    os_release = safe_read_text('/etc/os-release')
+    match = re.search(r'^PRETTY_NAME="?([^"\n]+)"?$', os_release, re.MULTILINE)
+    if match:
+        return match.group(1)
+    return 'Linux'
 
 
 def get_board_identity() -> Dict[str, str]:
@@ -625,6 +634,7 @@ def get_info():
             'board_name': board['board_name'],
             'chipset': board['chipset'],
             'board_source': board['source'],
+            'os_name': get_os_name(),
             'timestamp': datetime.now().isoformat()
         }
         
@@ -636,7 +646,7 @@ def get_info():
 def dashboard():
     """Serve the web dashboard (loads HTML file)"""
     try:
-        dashboard_path = os.path.join(os.path.dirname(__file__), 'am5_system_monitor.html')
+        dashboard_path = os.path.join(os.path.dirname(__file__), 'sensor_dash.html')
         if os.path.exists(dashboard_path):
             with open(dashboard_path, 'r', encoding='utf-8') as f:
                 return render_template_string(f.read())
@@ -647,7 +657,7 @@ def dashboard():
     <!DOCTYPE html>
     <html>
     <head>
-        <title>AM5 System Monitor</title>
+        <title>Sensor Dash</title>
         <style>
             body {
                 background: #0f172a;
@@ -696,7 +706,7 @@ def dashboard():
     </head>
     <body>
         <div class="container">
-            <h1>⚙️ AM5 System Monitor</h1>
+            <h1>⚙️ Sensor Dash</h1>
             <p>API is running! Access temperature data at:</p>
             <p><code>/api/temps</code> - Current temperatures</p>
             <p><code>/api/status</code> - System status</p>
@@ -716,7 +726,7 @@ def dashboard():
 def kiosk():
     """Serve the simplified kiosk display (optimized for 5-inch screens)"""
     try:
-        kiosk_path = os.path.join(os.path.dirname(__file__), 'am5_system_monitor_kiosk.html')
+        kiosk_path = os.path.join(os.path.dirname(__file__), 'sensor_dash_kiosk.html')
         if os.path.exists(kiosk_path):
             with open(kiosk_path, 'r', encoding='utf-8') as f:
                 return render_template_string(f.read())
@@ -727,7 +737,7 @@ def kiosk():
     <!DOCTYPE html>
     <html>
     <head>
-        <title>AM5 Kiosk</title>
+        <title>Sensor Dash Kiosk</title>
         <meta http-equiv="refresh" content="0;url=/dashboard" />
     </head>
     <body>Kiosk file not found, redirecting...</body>
@@ -752,7 +762,7 @@ def index():
 def print_banner():
     """Print startup banner"""
     print(f"\n{Colors.CYAN}{'='*60}")
-    print(f"{Colors.BLUE}  AM5 SYSTEM MONITOR - Backend Server")
+    print(f"{Colors.BLUE}  SENSOR DASH - Backend Server")
     print(f"{Colors.CYAN}{'='*60}{Colors.RESET}\n")
     print(f"{Colors.GREEN}✓ Server starting...{Colors.RESET}")
     if proxy_enabled():

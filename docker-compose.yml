@@ -1,9 +1,9 @@
 services:
-  am5-monitor:
+  sensor-dash:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: am5-monitor
+    container_name: sensor-dash
     ports:
       - "5000:5000"
     restart: unless-stopped
