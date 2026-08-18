@@ -22,7 +22,7 @@ COPY sensor_dash_kiosk.html .
 COPY docs/TEMPERATURE_MAPPING.md .
 
 # Create non-root user for security
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+RUN adduser -D -u 1000 appuser && chown -R appuser:appuser /app
 USER appuser
 
 # Expose port
