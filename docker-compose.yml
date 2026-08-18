@@ -18,6 +18,8 @@ services:
       - /sys:/sys:ro
       # Mount /proc for system info
       - /proc:/proc:ro
+      # Mount host os-release so the dashboard reports the host OS, not the container's
+      - /etc/os-release:/etc/os-release:ro
     privileged: false
     networks:
       - monitor-network

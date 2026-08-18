@@ -9,7 +9,7 @@ Motherboard:    ASUS ROG Strix X870E-E Gaming WiFi
 Chipset:        AMD X870E
 CPU:            AMD Ryzen (assumed - based on sensor data)
 GPU:            AMD Radeon (dGPU or integrated)
-Storage:        3x NVMe SSDs
+Storage:        NVMe SSDs (count varies by system; SATA/RAID also auto-detected)
 OS:             Arch Linux
 ```
 
@@ -382,12 +382,12 @@ psensor
 | Temperature Monitoring | ✅ Working | gigabyte_wmi, thermal_zone0 |
 | Motherboard PWM Control | ❌ Not Available | Use BIOS instead |
 | GPU Fan Control | ✅ Available | Manual PWM possible |
-| SSD Monitoring | ✅ Working | All 3 NVMe visible |
+| SSD Monitoring | ✅ Working | All detected NVMe/SATA drives visible |
 | CPU Frequency Scaling | ✅ Working | /proc/cpuinfo shows dynamic freq |
 | BIOS Control | ✅ Recommended | DEL/F2 at boot |
 
 ---
 
 **Last Updated**: 2025  
-**Your Hardware**: B650 EAGLE AX + AMD CPU/GPU, Arch Linux  
+**Example Hardware**: ASUS ROG Strix X870E-E Gaming WiFi + AMD CPU/GPU, Arch Linux  
 **Recommended Action**: Configure fan curves in BIOS (Power → Thermal Settings)

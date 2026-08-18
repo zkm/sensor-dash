@@ -6,6 +6,7 @@ FROM python:3.11-alpine
 # Install system dependencies for sensor reading
 RUN apk add --no-cache \
     lm-sensors \
+    pciutils \
     curl
 
 # Set working directory

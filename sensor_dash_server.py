@@ -94,6 +94,104 @@ def detect_chipset_from_board(board_name: str) -> str:
     return 'AMD AM5 (detected)'
 
 
+def get_raid_membership() -> Dict[str, Dict[str, str]]:
+    """Map SCSI host number -> md RAID array info, via /proc/mdstat + /sys block devices."""
+    mdstat = safe_read_text('/proc/mdstat')
+    if not mdstat:
+        return {}
+
+    mount_map: Dict[str, str] = {}
+    for line in safe_read_text('/proc/mounts').splitlines():
+        parts = line.split()
+        if len(parts) >= 2 and parts[0].startswith('/dev/md'):
+            mount_map[os.path.basename(parts[0])] = parts[1]
+
+    host_to_array: Dict[str, Dict[str, str]] = {}
+    for line in mdstat.splitlines():
+        header = re.match(r'^(md\d+)\s*:\s*active\s+(?:\(auto-read-only\)\s+)?(\S+)\s+(.+)$', line.strip())
+        if not header:
+            continue
+        array_name, level, members_text = header.group(1), header.group(2), header.group(3)
+        for dev in re.findall(r'([a-z]+\d*)\[\d+\]', members_text):
+            real_path = os.path.realpath(f'/sys/block/{dev}/device')
+            scsi_match = re.search(r'/(\d+):\d+:\d+:\d+$', real_path)
+            if scsi_match:
+                host_to_array[scsi_match.group(1)] = {
+                    'array': array_name,
+                    'level': level,
+                    'mountpoint': mount_map.get(array_name, ''),
+                    'member': dev
+                }
+    return host_to_array
+
+
+def get_gpu_names() -> Dict[str, str]:
+    """Map amdgpu PCI chip id (e.g. '0300') -> friendly GPU name, via lspci."""
+    output = SensorReader.run_command("lspci -nn 2>/dev/null")
+    names: Dict[str, str] = {}
+    for line in output.splitlines():
+        match = re.match(
+            r'^([0-9a-f]{2}):([0-9a-f]{2})\.\d\s+(?:VGA compatible controller|3D controller|Display controller)\b.*?:\s*(.+)$',
+            line.strip(), re.IGNORECASE
+        )
+        if not match:
+            continue
+        bus, device, desc = match.group(1), match.group(2), match.group(3)
+        desc = re.sub(r'\s*\[[0-9a-f]{4}:[0-9a-f]{4}\]', '', desc)  # strip [vendor:device] ids
+        desc = re.sub(r'\s*\(rev [0-9a-f]+\)\s*$', '', desc).strip()
+        # Drop the leading vendor tag, e.g. "Advanced Micro Devices, Inc. [AMD/ATI] " -> "Navi 48 [Radeon RX 9070 XT]"
+        product = re.sub(r'^.*?\[[^\]]+\]\s*', '', desc)
+        # Prefer a bracketed marketing name if present (e.g. "Navi 48 [Radeon RX 9070 XT]"),
+        # else fall back to the bare codename (e.g. integrated GPUs like "Raphael").
+        bracket = re.search(r'\[([^\]]+)\]', product)
+        names[f'{bus}{device}'] = bracket.group(1) if bracket else (product or desc)
+    return names
+
+
+def get_nvme_names() -> Dict[str, str]:
+    """Map NVMe PCI chip id (e.g. '0400') -> drive model, via /sys/class/nvme."""
+    names: Dict[str, str] = {}
+    try:
+        entries = os.listdir('/sys/class/nvme')
+    except OSError:
+        return names
+    for entry in entries:
+        ctrl_path = f'/sys/class/nvme/{entry}'
+        model = safe_read_text(f'{ctrl_path}/model')
+        real_path = os.path.realpath(f'{ctrl_path}/device')
+        addr_match = re.search(r'([0-9a-f]{2}):([0-9a-f]{2})\.\d$', real_path)
+        if model and addr_match:
+            names[f'{addr_match.group(1)}{addr_match.group(2)}'] = model
+    return names
+
+
+def get_sata_names() -> Dict[str, str]:
+    """Map SCSI host number -> drive model, via /sys/block/*/device."""
+    names: Dict[str, str] = {}
+    try:
+        entries = os.listdir('/sys/block')
+    except OSError:
+        return names
+    for dev in entries:
+        if not re.match(r'^sd[a-z]+$', dev):
+            continue
+        real_path = os.path.realpath(f'/sys/block/{dev}/device')
+        host_match = re.search(r'/(\d+):\d+:\d+:\d+$', real_path)
+        if not host_match:
+            continue
+        model = safe_read_text(f'/sys/block/{dev}/device/model')
+        if model:
+            names[host_match.group(1)] = model
+    return names
+
+
+def get_cpu_model() -> str:
+    """Return the CPU model name from /proc/cpuinfo."""
+    cpuinfo = safe_read_text('/proc/cpuinfo')
+    match = re.search(r'^model name\s*:\s*(.+)$', cpuinfo, re.MULTILINE)
+    return match.group(1).strip() if match else 'Unknown CPU'
+
+
 def get_os_name() -> str:
     """Return a human-readable OS name from /etc/os-release."""
     os_release = safe_read_text('/etc/os-release')
@@ -316,7 +414,8 @@ class SensorReader:
             'motherboard_chip': None,
             'cpu_chips': {},
             'amdgpu_devices': {},
-            'nvme': {}
+            'nvme': {},
+            'sata': {}
         }
 
         sections = SensorReader.parse_sensor_sections(output)
@@ -373,7 +472,17 @@ class SensorReader:
             composite = re.search(r'Composite:\s+([+-]?\d+\.?\d*)', nvme_data)
             if composite:
                 data['nvme'][f'nvme_{nvme_id}'] = float(composite.group(1))
-        
+
+        # Parse SATA/ATA drive temperatures (requires the `drivetemp` kernel module).
+        for chip_name, section_text in sections:
+            chip_lower = chip_name.lower()
+            if not chip_lower.startswith('drivetemp-'):
+                continue
+            drive_id = SensorReader.normalize_label(chip_name[len('drivetemp-'):])
+            temp_match = re.search(r'temp1:\s+([+-]?\d+\.?\d*)', section_text)
+            if temp_match:
+                data['sata'][f'sata_{drive_id}'] = float(temp_match.group(1))
+
         return data
 
     @staticmethod
@@ -432,9 +541,8 @@ class SensorReader:
             for gpu_id, gpu_data in sensor_data['amdgpu_devices'].items():
                 temps['gpu'][gpu_id] = gpu_data
         
-        # Storage temps
-        if sensor_data.get('nvme'):
-            temps['storage'] = sensor_data['nvme']
+        # Storage temps (NVMe + SATA/ATA via drivetemp)
+        temps['storage'] = {**sensor_data.get('nvme', {}), **sensor_data.get('sata', {})}
         
         return temps
 
@@ -596,22 +704,77 @@ def get_sensors():
                     data['gpu_temp'] = max(edge_temps)
             if data['gpu_temp'] is not None:
                 data['gpu_sensor'] = 'amdgpu:edge/junction'
-        
+
+        # Per-GPU temps (all detected GPUs, for dashboards that render one card per device)
+        data['gpu_temps'] = {}
+        data['gpu_info'] = {}
+        if temps.get('gpu'):
+            gpu_names = get_gpu_names()
+            for gpu_id, gpu_data in temps['gpu'].items():
+                if not isinstance(gpu_data, dict):
+                    continue
+                gpu_temp_value = gpu_data.get('edge')
+                if gpu_temp_value is None:
+                    gpu_temp_value = gpu_data.get('junction')
+                if isinstance(gpu_temp_value, (int, float)):
+                    data['gpu_temps'][gpu_id] = gpu_temp_value
+                    # PCI bus+device suffix of e.g. "amdgpu-pci-0300" is "0300"
+                    pci_suffix = gpu_id.split('-')[-1]
+                    # Discrete GPUs report VRAM temp and/or fan telemetry; integrated GPUs don't.
+                    is_discrete = any(k in gpu_data for k in ('mem', 'fan_rpm', 'pwm'))
+                    data['gpu_info'][gpu_id] = {
+                        'name': gpu_names.get(pci_suffix, 'AMD Radeon'),
+                        'type': 'discrete' if is_discrete else 'integrated'
+                    }
+
         data['chipset_temp'] = temps.get('chipset')
         data['chipset_sensor'] = temps.get('chipset_sensor')
 
         data['vrm_temp'] = temps.get('vrm')
         data['vrm_sensor'] = temps.get('vrm_sensor')
         
-        # NVMe temps (all drives)
+        # Storage temps (all drives, split by bus type)
         data['nvme_temps'] = {}
+        data['sata_temps'] = {}
+        data['nvme_info'] = {}
+        data['sata_info'] = {}
         if temps.get('storage'):
-            nvme_list = [(k, v) for k, v in temps['storage'].items() if isinstance(v, (int, float))]
+            nvme_names = get_nvme_names()
+            sata_names = get_sata_names()
+            storage_list = [(k, v) for k, v in temps['storage'].items() if isinstance(v, (int, float))]
             # Sort by drive ID for consistent ordering
-            nvme_list.sort(key=lambda x: x[0])
-            for drive_id, nvme_temp in nvme_list:
-                data['nvme_temps'][drive_id] = nvme_temp
-        
+            storage_list.sort(key=lambda x: x[0])
+            for drive_id, drive_temp in storage_list:
+                if drive_id.startswith('sata_'):
+                    data['sata_temps'][drive_id] = drive_temp
+                    host_match = re.match(r'sata_scsi_(\d+)_', drive_id)
+                    if host_match and host_match.group(1) in sata_names:
+                        data['sata_info'][drive_id] = {'name': sata_names[host_match.group(1)]}
+                else:
+                    data['nvme_temps'][drive_id] = drive_temp
+                    pci_suffix = drive_id.split('_')[-1]
+                    if pci_suffix in nvme_names:
+                        data['nvme_info'][drive_id] = {'name': nvme_names[pci_suffix]}
+
+        # RAID array membership (md software RAID) for SATA drives
+        raid_map = get_raid_membership()
+        arrays_by_name: Dict[str, Dict] = {}
+        for drive_id in data['sata_temps']:
+            host_match = re.match(r'sata_scsi_(\d+)_', drive_id)
+            if not host_match:
+                continue
+            info = raid_map.get(host_match.group(1))
+            if not info:
+                continue
+            array_entry = arrays_by_name.setdefault(info['array'], {
+                'name': info['array'],
+                'level': info['level'],
+                'mountpoint': info['mountpoint'],
+                'members': []
+            })
+            array_entry['members'].append(drive_id)
+        data['raid_arrays'] = list(arrays_by_name.values())
+
         return jsonify(data)
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
@@ -635,6 +798,7 @@ def get_info():
             'chipset': board['chipset'],
             'board_source': board['source'],
             'os_name': get_os_name(),
+            'cpu_model': get_cpu_model(),
             'timestamp': datetime.now().isoformat()
         }
         

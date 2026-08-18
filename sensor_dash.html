@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sensor Dash</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌡️</text></svg>">
     <style>
         * {
             margin: 0;
@@ -360,6 +361,12 @@
             z-index: 1;
         }
 
+        .monitor-title-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
         .monitor-title {
             font-size: 1.1em;
             font-weight: 600;
@@ -457,7 +464,7 @@
 
         .info-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 20px;
         }
 
@@ -693,9 +700,9 @@
             <!-- CPU Monitor -->
             <div class="monitor-card" id="cpu-card">
                 <div class="monitor-header">
-                    <div>
-                        <div class="monitor-title">CPU Temperature</div>
+                    <div class="monitor-title-row">
                         <div class="monitor-icon">🖥️</div>
+                        <div class="monitor-title" id="cpu-card-title">CPU Temperature</div>
                     </div>
                 </div>
                 <div class="temp-display" id="cpu-temp">--°C</div>
@@ -714,36 +721,14 @@
                 </div>
             </div>
 
-            <!-- GPU Monitor -->
-            <div class="monitor-card" id="gpu-card">
-                <div class="monitor-header">
-                    <div>
-                        <div class="monitor-title">GPU Temperature</div>
-                        <div class="monitor-icon">🎮</div>
-                    </div>
-                </div>
-                <div class="temp-display" id="gpu-temp">38°C</div>
-                <div class="temp-label">GPU Edge Temperature</div>
-                <div class="temp-bar">
-                    <div class="temp-bar-fill" id="gpu-bar" style="width: 35%; background: linear-gradient(90deg, var(--success) 0%, var(--success) 100%)"></div>
-                </div>
-                <div class="temp-status">
-                    <span>Safe: &lt;85°C</span>
-                    <span id="gpu-status">Idle</span>
-                </div>
-                <div class="sensor-detail" id="gpu-sensor-detail">📍 detecting sensor...</div>
-                <div class="refresh-indicator">
-                    <div class="refresh-dot"></div>
-                    <span>Detected</span>
-                </div>
-            </div>
+            <!-- GPU cards are injected dynamically by JS (syncMonitorCards) -->
 
             <!-- Chipset Monitor -->
             <div class="monitor-card" id="chipset-card">
                 <div class="monitor-header">
-                    <div>
-                        <div class="monitor-title">Chipset</div>
+                    <div class="monitor-title-row">
                         <div class="monitor-icon">🏢</div>
+                        <div class="monitor-title" id="chipset-card-title">Chipset</div>
                     </div>
                 </div>
                 <div class="temp-display" id="chipset-temp">45°C</div>
@@ -762,77 +747,7 @@
                 </div>
             </div>
 
-            <!-- SSD 1 Monitor -->
-            <div class="monitor-card" id="nvme1-card">
-                <div class="monitor-header">
-                    <div>
-                        <div class="monitor-title">NVMe Drive 1</div>
-                        <div class="monitor-icon">💾</div>
-                    </div>
-                </div>
-                <div class="temp-display" id="nvme1-temp">40°C</div>
-                <div class="temp-label">SSD Temperature</div>
-                <div class="temp-bar">
-                    <div class="temp-bar-fill" id="nvme1-bar" style="width: 40%; background: linear-gradient(90deg, var(--success) 0%, var(--success) 100%)"></div>
-                </div>
-                <div class="temp-status">
-                    <span>Safe: &lt;60°C</span>
-                    <span id="nvme1-status">Healthy</span>
-                </div>
-                <div class="sensor-detail" id="nvme1-sensor-detail">📍 detecting sensor...</div>
-                <div class="refresh-indicator">
-                    <div class="refresh-dot"></div>
-                    <span>Detected</span>
-                </div>
-            </div>
-
-            <!-- SSD 2 Monitor -->
-            <div class="monitor-card" id="nvme2-card">
-                <div class="monitor-header">
-                    <div>
-                        <div class="monitor-title">NVMe Drive 2</div>
-                        <div class="monitor-icon">💾</div>
-                    </div>
-                </div>
-                <div class="temp-display" id="nvme2-temp">36°C</div>
-                <div class="temp-label">SSD Temperature</div>
-                <div class="temp-bar">
-                    <div class="temp-bar-fill" id="nvme2-bar" style="width: 36%; background: linear-gradient(90deg, var(--success) 0%, var(--success) 100%)"></div>
-                </div>
-                <div class="temp-status">
-                    <span>Safe: &lt;60°C</span>
-                    <span id="nvme2-status">Healthy</span>
-                </div>
-                <div class="sensor-detail" id="nvme2-sensor-detail">📍 detecting sensor...</div>
-                <div class="refresh-indicator">
-                    <div class="refresh-dot"></div>
-                    <span>Detected</span>
-                </div>
-            </div>
-
-            <!-- SSD 3 Monitor -->
-            <div class="monitor-card" id="nvme3-card">
-                <div class="monitor-header">
-                    <div>
-                        <div class="monitor-title">NVMe Drive 3</div>
-                        <div class="monitor-icon">💾</div>
-                    </div>
-                </div>
-                <div class="temp-display" id="nvme3-temp">38°C</div>
-                <div class="temp-label">SSD Temperature</div>
-                <div class="temp-bar">
-                    <div class="temp-bar-fill" id="nvme3-bar" style="width: 38%; background: linear-gradient(90deg, var(--success) 0%, var(--success) 100%)"></div>
-                </div>
-                <div class="temp-status">
-                    <span>Safe: &lt;60°C</span>
-                    <span id="nvme3-status">Healthy</span>
-                </div>
-                <div class="sensor-detail" id="nvme3-sensor-detail">📍 detecting sensor...</div>
-                <div class="refresh-indicator">
-                    <div class="refresh-dot"></div>
-                    <span>Detected</span>
-                </div>
-            </div>
+            <!-- NVMe/SATA drive cards are injected dynamically by JS (syncDriveCards) -->
         </section>
 
         <!-- System Information -->
@@ -848,16 +763,20 @@
                     <div class="info-value" id="info-chipset">Detecting...</div>
                 </div>
                 <div class="info-item">
-                    <div class="info-label">CPU Arch</div>
-                    <div class="info-value">AMD Ryzen (Zen 4)</div>
+                    <div class="info-label">CPU Model</div>
+                    <div class="info-value" id="info-cpu">Detecting...</div>
                 </div>
                 <div class="info-item">
                     <div class="info-label">GPUs Detected</div>
-                    <div class="info-value">2x AMD Radeon</div>
+                    <div class="info-value" id="info-gpu">Detecting...</div>
                 </div>
                 <div class="info-item">
                     <div class="info-label">Storage Drives</div>
-                    <div class="info-value">3x NVMe</div>
+                    <div class="info-value" id="info-storage">Detecting...</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">RAID Arrays</div>
+                    <div class="info-value" id="info-raid">None detected</div>
                 </div>
                 <div class="info-item">
                     <div class="info-label">Operating System</div>
@@ -935,17 +854,22 @@
                 const board = info.board_name || 'Auto-detected Board';
                 const chipset = info.chipset || 'AMD AM5';
                 const os = info.os_name || 'Linux';
+                const cpuModel = info.cpu_model || 'Unknown CPU';
 
                 document.getElementById('header-subtitle').textContent = `${board} | ${os}`;
                 document.getElementById('info-motherboard').textContent = board;
                 document.getElementById('info-chipset').textContent = chipset;
+                document.getElementById('info-cpu').textContent = cpuModel;
                 document.getElementById('info-os').textContent = os;
                 document.getElementById('footer-title').textContent = `SENSOR DASH | ${board} | ${os}`;
+                document.getElementById('cpu-card-title').textContent = cpuModel;
+                document.getElementById('chipset-card-title').textContent = chipset;
             } catch (err) {
                 document.getElementById('header-subtitle').textContent = 'Auto-detected Board | Linux';
                 document.getElementById('info-motherboard').textContent = 'Auto-detected Board';
                 document.getElementById('info-chipset').textContent = 'Unknown';
                 document.getElementById('info-os').textContent = 'Unknown';
+                document.getElementById('info-cpu').textContent = 'Unknown';
             }
         }
 
@@ -955,51 +879,136 @@
                 const sensors = await sensorsRes.json();
 
                 const nvmeEntries = Object.entries(sensors.nvme_temps || {}).sort((a, b) => a[0].localeCompare(b[0]));
+                const sataEntries = Object.entries(sensors.sata_temps || {}).sort((a, b) => a[0].localeCompare(b[0]));
+                const gpuEntries = Object.entries(sensors.gpu_temps || {}).sort((a, b) => a[0].localeCompare(b[0]));
 
                 const temps = {
                     cpu: sensors.cpu_temp,
-                    gpu: sensors.gpu_temp,
                     chipset: sensors.chipset_temp,
-                    nvme1: nvmeEntries[0]?.[1] ?? null,
-                    nvme2: nvmeEntries[1]?.[1] ?? null,
-                    nvme3: nvmeEntries[2]?.[1] ?? null,
                 };
 
                 updateTemp('cpu-temp', 'cpu-bar', 'cpu-status', temps.cpu, 70);
-                updateTemp('gpu-temp', 'gpu-bar', 'gpu-status', temps.gpu, 85);
                 updateTemp('chipset-temp', 'chipset-bar', 'chipset-status', temps.chipset, 80);
-                updateTemp('nvme1-temp', 'nvme1-bar', 'nvme1-status', temps.nvme1, 60);
-                updateTemp('nvme2-temp', 'nvme2-bar', 'nvme2-status', temps.nvme2, 60);
-                updateTemp('nvme3-temp', 'nvme3-bar', 'nvme3-status', temps.nvme3, 60);
 
                 toggleCard('cpu-card', temps.cpu);
-                toggleCard('gpu-card', temps.gpu);
                 toggleCard('chipset-card', temps.chipset);
-                toggleCard('nvme1-card', temps.nvme1);
-                toggleCard('nvme2-card', temps.nvme2);
-                toggleCard('nvme3-card', temps.nvme3);
 
                 if (sensors.cpu_sensor) {
                     document.getElementById('cpu-sensor-detail').textContent = `📍 ${sensors.cpu_sensor}`;
                 }
-                if (sensors.gpu_sensor) {
-                    document.getElementById('gpu-sensor-detail').textContent = `📍 ${sensors.gpu_sensor}`;
-                }
                 if (sensors.chipset_sensor) {
                     document.getElementById('chipset-sensor-detail').textContent = `📍 ${sensors.motherboard_chip || 'motherboard'} (${sensors.chipset_sensor})`;
                 }
-                [nvmeEntries[0], nvmeEntries[1], nvmeEntries[2]].forEach((entry, i) => {
-                    const el = document.getElementById(`nvme${i + 1}-sensor-detail`);
-                    if (el && entry) el.textContent = `📍 ${entry[0]}`;
+
+                const raidArrays = sensors.raid_arrays || [];
+                const raidLabelByDrive = {};
+                raidArrays.forEach(arr => {
+                    const label = `${(arr.level || '').toUpperCase()} ${arr.name}${arr.mountpoint ? ' → ' + arr.mountpoint : ''}`;
+                    (arr.members || []).forEach(memberId => { raidLabelByDrive[memberId] = label; });
                 });
+
+                const gpuInfo = sensors.gpu_info || {};
+                const gpuTitleByKey = {};
+                Object.entries(gpuInfo).forEach(([key, info]) => {
+                    const typeTag = info.type === 'discrete' ? 'dGPU' : info.type === 'integrated' ? 'iGPU' : '';
+                    gpuTitleByKey[key] = typeTag ? `${info.name} (${typeTag})` : info.name;
+                });
+
+                const nvmeInfo = sensors.nvme_info || {};
+                const nvmeTitleByKey = {};
+                Object.entries(nvmeInfo).forEach(([key, info]) => { nvmeTitleByKey[key] = info.name; });
+
+                const sataInfo = sensors.sata_info || {};
+                const sataTitleByKey = {};
+                Object.entries(sataInfo).forEach(([key, info]) => { sataTitleByKey[key] = info.name; });
+
+                syncMonitorCards(gpuEntries, 'gpu', 'GPU', '🎮', 85, 'GPU Edge Temperature', {}, gpuTitleByKey);
+                syncMonitorCards(nvmeEntries, 'nvme', 'NVMe Drive', '💾', 60, 'Drive Temperature', {}, nvmeTitleByKey);
+                syncMonitorCards(sataEntries, 'sata', 'SATA Drive', '💿', 55, 'Drive Temperature', raidLabelByDrive, sataTitleByKey);
+
+                const infoGpu = document.getElementById('info-gpu');
+                if (infoGpu) {
+                    infoGpu.innerHTML = gpuEntries.length
+                        ? gpuEntries.map(([key]) => gpuTitleByKey[key] || 'AMD Radeon').join('<br>')
+                        : 'None detected';
+                }
+
+                const storageParts = [];
+                if (nvmeEntries.length) storageParts.push(`${nvmeEntries.length}x NVMe`);
+                if (sataEntries.length) storageParts.push(`${sataEntries.length}x SATA`);
+                const infoStorage = document.getElementById('info-storage');
+                if (infoStorage) infoStorage.innerHTML = storageParts.length ? storageParts.join('<br>') : 'None detected';
+
+                const infoRaid = document.getElementById('info-raid');
+                if (infoRaid) {
+                    infoRaid.textContent = raidArrays.length
+                        ? raidArrays.map(a => `${(a.level || '').toUpperCase()} ${a.name} (${a.members.length} drives)`).join(', ')
+                        : 'None detected';
+                }
 
                 const now = new Date();
                 document.getElementById('last-update').textContent = `Last update: ${now.toLocaleTimeString()}`;
 
-                const forStatus = Object.values(temps).filter(v => typeof v === 'number');
+                const forStatus = [temps.cpu, temps.chipset, ...gpuEntries.map(e => e[1]), ...nvmeEntries.map(e => e[1]), ...sataEntries.map(e => e[1])]
+                    .filter(v => typeof v === 'number');
                 updateOverallStatus(forStatus);
             } catch (err) {
                 document.getElementById('last-update').textContent = 'Last update: API error';
+            }
+        }
+
+        function buildMonitorCard(id, title, icon, maxSafe, tempLabel) {
+            const card = document.createElement('div');
+            card.className = 'monitor-card';
+            card.id = `${id}-card`;
+            card.innerHTML = `
+                <div class="monitor-header">
+                    <div class="monitor-title-row">
+                        <div class="monitor-icon">${icon}</div>
+                        <div class="monitor-title">${title}</div>
+                    </div>
+                </div>
+                <div class="temp-display" id="${id}-temp">--°C</div>
+                <div class="temp-label">${tempLabel}</div>
+                <div class="temp-bar">
+                    <div class="temp-bar-fill" id="${id}-bar" style="width: 0%; background: linear-gradient(90deg, var(--success) 0%, var(--success) 100%)"></div>
+                </div>
+                <div class="temp-status">
+                    <span>Safe: &lt;${maxSafe}°C</span>
+                    <span id="${id}-status">Unknown</span>
+                </div>
+                <div class="sensor-detail" id="${id}-sensor-detail">📍 detecting sensor...</div>
+                <div class="refresh-indicator">
+                    <div class="refresh-dot"></div>
+                    <span>Detected</span>
+                </div>
+            `;
+            return card;
+        }
+
+        function syncMonitorCards(entries, idPrefix, titlePrefix, icon, maxSafe, tempLabel, extraLabelByKey = {}, titleByKey = {}) {
+            const grid = document.querySelector('.monitors-grid');
+
+            entries.forEach(([sensorKey, value], i) => {
+                const id = `${idPrefix}${i + 1}`;
+                const title = titleByKey[sensorKey] || (entries.length > 1 ? `${titlePrefix} ${i + 1}` : titlePrefix);
+                let card = document.getElementById(`${id}-card`);
+                if (!card) {
+                    card = buildMonitorCard(id, title, icon, maxSafe, tempLabel);
+                    grid.appendChild(card);
+                }
+                updateTemp(`${id}-temp`, `${id}-bar`, `${id}-status`, value, maxSafe);
+                toggleCard(`${id}-card`, value);
+                const detailEl = document.getElementById(`${id}-sensor-detail`);
+                const extraLabel = extraLabelByKey[sensorKey];
+                if (detailEl) detailEl.textContent = extraLabel ? `📍 ${sensorKey} · 🔗 ${extraLabel}` : `📍 ${sensorKey}`;
+            });
+
+            // Remove stale cards left over from a device count that shrank (e.g. unplugged).
+            for (let i = entries.length + 1; ; i++) {
+                const staleCard = document.getElementById(`${idPrefix}${i}-card`);
+                if (!staleCard) break;
+                staleCard.remove();
             }
         }
 
