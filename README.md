@@ -1,5 +1,12 @@
 # Sensor Dash
 
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
+![Python 3.11](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
+![Flask 3](https://img.shields.io/badge/Flask-3-000000?logo=flask&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
+![Raspberry Pi kiosk](https://img.shields.io/badge/Raspberry%20Pi-kiosk-A22846?logo=raspberrypi&logoColor=white)
+
 Web dashboard and API for monitoring Linux system temperatures. Auto-detects available sensors (CPU, GPU, chipset, VRM, NVMe) and only displays what's actually present on the host; includes extra chipset/board detection for AMD AM5 desktops.
 
 This project provides:
